@@ -17,6 +17,17 @@ The project uses **Apple Development** signing with Hugo Corta's team (`JFMWLVS6
 
 Screenshots remain in `~/Pictures/Quickshot` until you delete them. Names contain a timestamp and unique identifier; captures never overwrite one another. The popup shows permission or capture failures. Screen capture uses ScreenCaptureKit without running a continuous recording stream.
 
+### Global shortcut behavior
+
+The shortcut uses a **session-wide, listen-only Core Graphics event tap**, independent of the focused application, display, or Space. This includes ordinary full-screen apps and Quickshot itself. No window needs to be focused and no app-specific shortcut registration is involved. Events pass through unchanged.
+
+- A dedicated named thread and run loop handle keyboard events, independently of AppKit menus and screenshot encoding.
+- Only modifier changes and key-down events are observed. The key path checks physical left/right Command flags and a small state machine; it does not read text, log keys, capture images, or synchronously wait for the UI. Only recognized chords are dispatched to the main actor.
+- When healthy, there is no periodic polling timer. Disabled taps recover via callbacks; wake, session activation, Space changes, app activation, and the menu can trigger a health check. A two-second, tolerance-enabled retry timer exists only while monitoring is unavailable or Secure Keyboard Entry is detected.
+- Keys held across startup, wake, or listener interruption must be released before another chord can fire, preventing accidental captures from stale modifier state.
+
+**macOS limitation:** Secure Keyboard Entry (including Terminal's optional Secure Keyboard Entry mode), protected password entry, login/lock screens, and inactive user sessions can suppress third-party keyboard delivery. Quickshot cannot override that. When detected, the menu reports the secure-input state; turn off Terminal's Secure Keyboard Entry for global shortcuts there. The monitor resumes after access returns.
+
 ### Permissions show enabled but the app is denied
 
 Older Quickshot builds were ad-hoc signed. Their designated code-signing requirement was a binary hash, which can change with rebuilds. A permission toggle for an older build can therefore remain enabled without authorizing the current build. Certificate-based signing gives rebuilds a stable identity.
@@ -52,3 +63,5 @@ The Debug executable accepts `--smoke-test` to launch the actual AppKit lifecycl
 The Debug executable also accepts `--permission-diagnostics` to attempt keyboard-monitor registration, print the same diagnostic details as the menu command, then exit. Running an app directly from a terminal may affect macOS permission attribution; use the menu diagnostics when investigating an Xcode-launched instance.
 
 Manual integration check (requires permission approval): verify the icon appears with no Dock entry; grant both permissions; press left and right Command together over each monitor; paste into a text editor and open the resulting PNG. Confirm it matches the chosen display at full resolution and does not include the flash. Verify only the captured display flashes, the frontmost app keeps focus (including in full screen), holding the keys produces one capture, and releasing both allows another. Verify Command-C followed by Command-V does not capture, denied permission is visible in the menu, and repeated captures produce different existing files. Build and smoke checks do not substitute for this permission-dependent desktop check.
+
+For global-listener regression checks, repeat in Finder, a browser, an editor, Terminal with Secure Keyboard Entry off, each Space, and a full-screen app. Repeat after sleep/wake and unlock. Hold one Command key across a Space transition: no capture should occur until both keys have been released and pressed again. With Terminal Secure Keyboard Entry on, open Quickshot's menu to inspect the reported state, then turn it off and verify recovery. Automated gesture tests cover both key orders, held-key suppression, cancellation, interrupted-listener resynchronization, and 10,000 consecutive capture cycles; they do not simulate the macOS desktop transitions.

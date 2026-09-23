@@ -18,8 +18,7 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let statusMessage = NSMenuItem(title: "Left ⌘ + Right ⌘ to capture", action: nil, keyEquivalent: "")
     private let shortcutStatus = NSMenuItem(title: "Checking keyboard access…", action: nil, keyEquivalent: "")
     private let screenStatus = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-    private var lastRegistrationStatus: HotKeyManager.RegistrationStatus?
-    private var permissionTimer: Timer?
+    private var requestedInputPermission = false
     private var capturing = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -45,12 +44,6 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.menu = menu
 
         #if DEBUG
-        if CommandLine.arguments.contains("--permission-diagnostics") {
-            retryShortcut()
-            print(permissionDiagnostics())
-            NSApp.terminate(nil)
-            return
-        }
         if CommandLine.arguments.contains("--smoke-test") {
             precondition(NSApp.delegate === self)
             precondition(NSApp.activationPolicy() == .accessory)
@@ -62,12 +55,28 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         #endif
 
-        retryShortcut()
-        if hotKeyManager.status == .permissionDenied { CGRequestListenEventAccess() }
-        permissionTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.retryShortcut() }
-        }
-        retryShortcut()
+        hotKeyManager.start(onPress: { [weak self] in
+            self?.takeScreenshot()
+        }, onStatus: { [weak self] status in
+            guard let self else { return }
+            shortcutStatus.title = status.rawValue
+            NSLog("Quickshot: %@", status.rawValue)
+            #if DEBUG
+            if CommandLine.arguments.contains("--permission-diagnostics") {
+                print(permissionDiagnostics())
+                NSApp.terminate(nil)
+                return
+            }
+            #endif
+            if status == .permissionDenied && !requestedInputPermission {
+                requestedInputPermission = true
+                CGRequestListenEventAccess()
+            }
+        })
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        hotKeyManager.stop()
     }
 
     @objc private func takeScreenshot() {
@@ -105,16 +114,7 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func retryShortcut() {
-        _ = hotKeyManager.register(onPress: { [weak self] in
-            DispatchQueue.main.async { self?.takeScreenshot() }
-        })
-        shortcutStatus.title = hotKeyManager.status.rawValue
-        if lastRegistrationStatus != hotKeyManager.status {
-            NSLog("Quickshot: %@; input preflight=%d; bundle=%@", hotKeyManager.status.rawValue,
-                  CGPreflightListenEventAccess(), Bundle.main.bundleURL.path)
-            lastRegistrationStatus = hotKeyManager.status
-        }
-        // Do not replace capture errors or success feedback from the background permission timer.
+        hotKeyManager.refresh()
     }
 
     func menuWillOpen(_ menu: NSMenu) {

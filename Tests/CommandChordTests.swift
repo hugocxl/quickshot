@@ -17,6 +17,18 @@ struct CommandChordTests {
         assert(!keys(true, true)); assert(!keys(false, false))
         assert(!keys(true, true, other: true)); assert(!keys(true, true))
         assert(!keys(false, false)); assert(keys(true, true))
-        print("PASS: both key orders, once per hold, full-release reset, no double tap, shortcut cancellation")
+        detector.resynchronize(leftDown: true, rightDown: true)
+        assert(!keys(true, true)); assert(!keys(true, false)); assert(!keys(true, true))
+        assert(!keys(false, false)); assert(keys(true, true)) // Re-arm after wake with held keys
+        detector.resynchronize(leftDown: false, rightDown: false)
+        assert(!keys(false, true)); assert(keys(true, true)) // Recovery with all keys released
+        detector.resynchronize(leftDown: true, rightDown: false)
+        assert(!keys(true, true)); assert(!keys(false, false)); assert(keys(true, true))
+        detector.resynchronize(leftDown: false, rightDown: false)
+        for _ in 0..<10_000 {
+            assert(!keys(true, false)); assert(keys(true, true))
+            assert(!keys(true, true)); assert(!keys(false, false))
+        }
+        print("PASS: both key orders, once per hold, full-release reset, no double tap, shortcut cancellation, recovery, 10,000 cycles")
     }
 }
