@@ -6,4 +6,30 @@ The first version has no settings: press `Command` twice to capture the display 
 
 ## Run
 
-Open `Quickshot.xcodeproj` in Xcode and run the `Quickshot` target. It runs only in the menu bar, shown as a camera icon and `QS`, not in the Dock. On first run, approve Accessibility permission for the double-Command trigger and Screen Recording permission for screenshots in System Settings.
+Requires macOS 14 or newer. Open `Quickshot.xcodeproj` in Xcode and run the `Quickshot` target. It runs only in the menu bar, with an icon and a native popup menu, not in the Dock.
+
+1. Enable **Quickshot** in System Settings → Privacy & Security → **Input Monitoring** when prompted. Registration retries automatically after approval; relaunch if macOS requests it.
+2. Choose **Take Screenshot** from the menu once to request **Screen Recording** permission. Enable Quickshot and relaunch if macOS requests it. Both permission panels are accessible from the menu.
+3. Tap and release Command twice within 0.4 seconds. The display containing the pointer is the active display for this version, including its full desktop and windows. Ordinary shortcuts such as Command-C cancel the gesture.
+4. A brief checkmark means the PNG has been saved and its absolute path copied as plain text. Paste into Claude Code, OpenCode, or another tool.
+
+Screenshots remain in `~/Pictures/Quickshot` until you delete them. Names contain a timestamp and unique identifier; captures never overwrite one another. The popup shows permission or capture failures. Screen capture uses ScreenCaptureKit without running a continuous recording stream.
+
+## Verification
+
+Build:
+
+```sh
+xcodebuild -project Quickshot.xcodeproj -scheme Quickshot -configuration Debug build
+```
+
+Run gesture regression checks:
+
+```sh
+swiftc Quickshot/DoubleCommandDetector.swift Tests/DoubleCommandTests.swift -o /tmp/quickshot-tests
+/tmp/quickshot-tests
+```
+
+The Debug executable accepts `--smoke-test` to launch the actual AppKit lifecycle, check delegate attachment, menu actions, icon creation, and accessory activation policy, then exit without prompting for permissions.
+
+Manual integration check (requires permission approval): verify the icon appears with no Dock entry; grant both permissions; double-tap Command over each monitor; paste into a text editor and open the resulting PNG. Confirm it matches the chosen display at full resolution. Verify Command-C followed by Command-V does not capture, denied permission is visible in the menu, and repeated captures produce different existing files. Build and smoke checks do not substitute for this permission-dependent desktop check.
