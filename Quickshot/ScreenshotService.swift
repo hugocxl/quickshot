@@ -22,7 +22,7 @@ struct ScreenshotService {
     private static let outputDirectoryName = "Quickshot"
 
     @MainActor
-    static func captureActiveDisplay() async throws -> URL {
+    static func captureActiveDisplay() async throws -> (url: URL, screen: NSScreen) {
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }),
               let displayNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else {
             throw ScreenshotError.displayUnavailable
@@ -48,7 +48,7 @@ struct ScreenshotService {
             try? FileManager.default.removeItem(at: fileURL)
             throw ScreenshotError.writeFailed
         }
-        return fileURL
+        return (fileURL, screen)
     }
 
     static func outputDirectory() throws -> URL {

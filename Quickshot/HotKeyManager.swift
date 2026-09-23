@@ -1,9 +1,10 @@
 import ApplicationServices
+import IOKit.hidsystem
 
 final class HotKeyManager {
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
-    private var detector = DoubleCommandDetector()
+    private var detector = CommandChordDetector()
     private var onPress: (() -> Void)?
 
     deinit {
@@ -32,10 +33,10 @@ final class HotKeyManager {
                 }
                 let manager = Unmanaged<HotKeyManager>.fromOpaque(userData).takeUnretainedValue()
                 if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-                    manager.detector = DoubleCommandDetector()
+                    manager.detector = CommandChordDetector()
                     if let tap = manager.eventTap { CGEvent.tapEnable(tap: tap, enable: true) }
                 } else if type == .keyDown {
-                    manager.detector.cancel()
+                    if event.flags.contains(.maskCommand) { manager.detector.cancel() }
                 } else if type == .flagsChanged {
                     manager.handleFlagsChanged(event)
                 }
@@ -55,9 +56,10 @@ final class HotKeyManager {
 
     private func handleFlagsChanged(_ event: CGEvent) {
         let otherModifiers: CGEventFlags = [.maskShift, .maskControl, .maskAlternate, .maskSecondaryFn]
-        if detector.update(commandDown: event.flags.contains(.maskCommand),
-                           otherModifierDown: !event.flags.intersection(otherModifiers).isEmpty,
-                           time: Double(event.timestamp) / 1_000_000_000) {
+        // The aggregate .maskCommand flag cannot distinguish the two physical keys.
+        if detector.update(leftDown: event.flags.rawValue & UInt64(NX_DEVICELCMDKEYMASK) != 0,
+                           rightDown: event.flags.rawValue & UInt64(NX_DEVICERCMDKEYMASK) != 0,
+                           otherModifierDown: !event.flags.intersection(otherModifiers).isEmpty) {
             onPress?()
         }
     }

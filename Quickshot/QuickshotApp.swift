@@ -13,14 +13,15 @@ final class QuickshotApp: NSObject, NSApplicationDelegate {
 
     private var statusItem: NSStatusItem!
     private let hotKeyManager = HotKeyManager()
-    private let statusMessage = NSMenuItem(title: "Double-tap ⌘ to capture", action: nil, keyEquivalent: "")
+    private let captureFlash = CaptureFlash()
+    private let statusMessage = NSMenuItem(title: "Left ⌘ + Right ⌘ to capture", action: nil, keyEquivalent: "")
     private var permissionTimer: Timer?
     private var capturing = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        setStatusIcon("camera.viewfinder", toolTip: "Quickshot: press Command twice")
+        setStatusIcon("camera.viewfinder", toolTip: "Left ⌘ + Right ⌘ to capture")
 
         let menu = NSMenu()
         menu.addItem(statusMessage)
@@ -65,16 +66,19 @@ final class QuickshotApp: NSObject, NSApplicationDelegate {
         Task { @MainActor [self] in
             defer { capturing = false }
             do {
-                let screenshotURL = try await ScreenshotService.captureActiveDisplay()
+                let screenshot = try await ScreenshotService.captureActiveDisplay()
+                let screenshotURL = screenshot.url
                 NSPasteboard.general.clearContents()
                 guard NSPasteboard.general.setString(screenshotURL.path, forType: .string) else {
                     setStatusIcon("exclamationmark.triangle", toolTip: "Saved screenshot, but clipboard is unavailable")
                     return
                 }
                 setStatusIcon("checkmark", toolTip: "Screenshot path copied: \(screenshotURL.lastPathComponent)")
+                // Capture is complete before showing the overlay; block further captures until it disappears.
+                await captureFlash.show(on: screenshot.screen)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
                     guard let self, !capturing else { return }
-                    setStatusIcon("camera.viewfinder", toolTip: "Quickshot: press Command twice")
+                    setStatusIcon("camera.viewfinder", toolTip: "Left ⌘ + Right ⌘ to capture")
                 }
             } catch {
                 setStatusIcon("exclamationmark.triangle", toolTip: error.localizedDescription)
@@ -91,7 +95,7 @@ final class QuickshotApp: NSObject, NSApplicationDelegate {
         }
         permissionTimer?.invalidate()
         permissionTimer = nil
-        setStatusIcon("camera.viewfinder", toolTip: "Double-tap ⌘ to capture")
+        setStatusIcon("camera.viewfinder", toolTip: "Left ⌘ + Right ⌘ to capture")
     }
 
     @objc private func openScreenPermission() {
