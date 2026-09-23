@@ -7,19 +7,21 @@ final class QuickshotApp: NSObject, NSApplicationDelegate {
     private let hotKeyManager = HotKeyManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        setStatusIcon("camera.viewfinder", toolTip: "Quickshot: Control-Option-Command-4")
+        NSApp.setActivationPolicy(.accessory)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem.button?.title = "QS"
+        statusItem.button?.imagePosition = .imageLeading
+        setStatusIcon("camera.viewfinder", toolTip: "Quickshot: press Command twice")
 
         let menu = NSMenu()
-        menu.addItem(withTitle: "Take Screenshot", action: #selector(takeScreenshot), keyEquivalent: "4")
-        menu.items.last?.keyEquivalentModifierMask = [.control, .option, .command]
+        menu.addItem(withTitle: "Take Screenshot", action: #selector(takeScreenshot), keyEquivalent: "")
         menu.addItem(withTitle: "Show Screenshots in Finder", action: #selector(showOutputFolder), keyEquivalent: "")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Quickshot", action: #selector(quit), keyEquivalent: "q")
         statusItem.menu = menu
 
         if !hotKeyManager.register(onPress: { [weak self] in self?.takeScreenshot() }) {
-            setStatusIcon("exclamationmark.triangle", toolTip: "Quickshot: shortcut unavailable")
+            setStatusIcon("lock", toolTip: "Quickshot needs Accessibility permission for double-Command")
         }
     }
 
@@ -36,7 +38,7 @@ final class QuickshotApp: NSObject, NSApplicationDelegate {
             NSPasteboard.general.setString(screenshotURL.path, forType: .string)
             setStatusIcon("checkmark", toolTip: "Screenshot path copied: \(screenshotURL.lastPathComponent)")
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-                self?.setStatusIcon("camera.viewfinder", toolTip: "Quickshot: Control-Option-Command-4")
+                self?.setStatusIcon("camera.viewfinder", toolTip: "Quickshot: press Command twice")
             }
         } catch {
             setStatusIcon("exclamationmark.triangle", toolTip: error.localizedDescription)
@@ -53,7 +55,9 @@ final class QuickshotApp: NSObject, NSApplicationDelegate {
     }
 
     private func setStatusIcon(_ symbolName: String, toolTip: String) {
-        statusItem.button?.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Quickshot")
+        let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Quickshot")
+        image?.isTemplate = true
+        statusItem.button?.image = image
         statusItem.button?.toolTip = toolTip
     }
 }
