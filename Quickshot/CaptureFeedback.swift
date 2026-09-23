@@ -9,7 +9,9 @@ final class CaptureFeedback: NSObject {
 
     override init() {
         super.init()
-        sound = NSSound(contentsOfFile: "/System/Library/Components/CoreAudio.component/Contents/SharedSupport/SystemSounds/system/Grab.aif", byReference: true)
+        let systemSounds = "/System/Library/Components/CoreAudio.component/Contents/SharedSupport/SystemSounds/system/"
+        sound = ["Screen Capture.aif", "Grab.aif"].lazy
+            .compactMap { NSSound(contentsOfFile: systemSounds + $0, byReference: true) }.first
             ?? NSSound(named: "Tink")
         sound?.volume = 0.55
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(dismiss),
@@ -43,6 +45,10 @@ final class CaptureFeedback: NSObject {
                 panel?.close()
                 showPreview(image: image, layout: layout, fileURL: fileURL, fadeIn: reducedMotion)
                 try await Task.sleep(for: .seconds(3))
+                // Keep the preview while the pointer rests on it, like the system screenshot thumbnail.
+                while (panel?.contentView as? CapturePreviewView)?.isHovered == true {
+                    try await Task.sleep(for: .milliseconds(200))
+                }
                 guard !Task.isCancelled else { return }
                 NSAnimationContext.runAnimationGroup({ context in
                     context.duration = 0.22
@@ -146,6 +152,7 @@ final class CaptureFeedback: NSObject {
         self.panel = panel
         panel.alphaValue = fadeIn ? 0 : 1
         panel.orderFrontRegardless()
+        if !fadeIn { (panel.contentView as? CapturePreviewView)?.revealFooter() }
         if fadeIn {
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.18
@@ -161,6 +168,8 @@ final class CaptureFeedback: NSObject {
 private final class CapturePreviewView: NSView {
     private let fileURL: URL
     private let onDismiss: () -> Void
+    private var footer: [NSView] = []
+    private(set) var isHovered = false
 
     init(image: CGImage, size: CGSize, fileURL: URL, onDismiss: @escaping () -> Void) {
         self.fileURL = fileURL
@@ -196,9 +205,23 @@ private final class CapturePreviewView: NSView {
         close.isBordered = false
         close.contentTintColor = .secondaryLabelColor
         addSubview(close)
+        footer = [check, label, close]
+        addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                                       owner: self, userInfo: nil))
     }
 
     required init?(coder: NSCoder) { nil }
+    override func mouseEntered(with event: NSEvent) { isHovered = true }
+    override func mouseExited(with event: NSEvent) { isHovered = false }
+
+    /// The flight lands only the image; ease the footer in so the card doesn't pop when the panels swap.
+    func revealFooter() {
+        footer.forEach { $0.alphaValue = 0 }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.2
+            footer.forEach { $0.animator().alphaValue = 1 }
+        }
+    }
     @objc private func openImage() { NSWorkspace.shared.open(fileURL); onDismiss() }
     @objc private func closePreview() { onDismiss() }
 }

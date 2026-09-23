@@ -20,12 +20,12 @@ Screenshots remain in `~/Pictures/Quickshot` until you delete them. Names contai
 ### Capture feedback
 
 - A 0.72-second Core Animation sequence takes the actual captured image from full-screen size to a rounded, shadowed corner card, with a brief 0.22-second exposure flash.
-- The preview sits inside the captured display's usable area, above the Dock, maintains the screenshot's aspect ratio, and stays for three seconds before fading away.
+- The preview sits inside the captured display's usable area, above the Dock, maintains the screenshot's aspect ratio, and stays for three seconds before fading away. Hovering over it keeps it on screen. Its footer fades in once the flight lands.
 - Click the image to open the saved PNG, or click **×** to dismiss it. Appearance never takes keyboard focus; only the small preview accepts clicks, while the full-screen animation is click-through.
 - New captures cancel and replace the previous animation/preview. Quickshot's own windows are excluded from ScreenCaptureKit, so feedback and setup UI cannot appear in subsequent screenshots.
 - Changing Spaces or disconnecting/rearranging displays dismisses feedback rather than leaving it on the wrong desktop.
 - With **Reduce Motion**, the thumbnail simply fades in without a screen-wide flash or flight. A VoiceOver announcement confirms that the path was copied.
-- Shutter audio uses macOS's `Grab.aif` through `NSSound` at reduced volume, respecting system output/mute. If that system resource is unavailable, a short native confirmation sound is used instead.
+- Shutter audio uses macOS's own screenshot sound (`Screen Capture.aif`, falling back to `Grab.aif`) through `NSSound` at reduced volume, respecting system output/mute. If that system resource is unavailable, a short native confirmation sound is used instead.
 
 The setup window offers live permission cards, an **Already enabled, but not working?** recovery section, and **Show This App in Finder** to identify the exact build to authorize. Closing setup or choosing **Set Up Later** is supported. The app remains menu-bar-only with no Dock entry. Capture errors use focused native dialogs with retry/cancel actions rather than silently failing.
 
