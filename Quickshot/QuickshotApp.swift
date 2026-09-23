@@ -20,6 +20,9 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let screenStatus = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private var requestedInputPermission = false
     private var capturing = false
+    private var recognizedChords = 0
+    private var completedCaptures = 0
+    private var lastCaptureResult = "No capture attempted"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -56,15 +59,27 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         #endif
 
         hotKeyManager.start(onPress: { [weak self] in
-            self?.takeScreenshot()
+            guard let self else { return }
+            recognizedChords += 1
+            NSLog("Quickshot chord recognized; count=%ld; frontmost=%@", recognizedChords,
+                  NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "unknown")
+            takeScreenshot()
         }, onStatus: { [weak self] status in
             guard let self else { return }
             shortcutStatus.title = status.rawValue
             NSLog("Quickshot: %@", status.rawValue)
             #if DEBUG
             if CommandLine.arguments.contains("--permission-diagnostics") {
-                print(permissionDiagnostics())
-                NSApp.terminate(nil)
+                // LaunchServices must be used for permission tests; direct shell launches may
+                // inherit the terminal application's TCC identity. Delay to verify background access.
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(for: .seconds(3))
+                    guard let self else { return }
+                    let report = permissionDiagnostics()
+                    print(report)
+                    NSLog("%@", report)
+                    NSApp.terminate(nil)
+                }
                 return
             }
             #endif
@@ -80,8 +95,12 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func takeScreenshot() {
-        guard !capturing else { return }
+        guard !capturing else {
+            NSLog("Quickshot capture skipped: previous capture/flash still in progress")
+            return
+        }
         capturing = true
+        lastCaptureResult = "Capture in progress"
         Task { @MainActor [self] in
             defer { capturing = false }
             do {
@@ -90,10 +109,14 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 let screenshotURL = screenshot.url
                 NSPasteboard.general.clearContents()
                 guard NSPasteboard.general.setString(screenshotURL.path, forType: .string) else {
+                    lastCaptureResult = "PNG saved; clipboard write failed"
                     setStatusIcon("exclamationmark.triangle", toolTip: "Saved screenshot, but clipboard is unavailable")
                     return
                 }
                 setStatusIcon("checkmark", toolTip: "Screenshot path copied: \(screenshotURL.lastPathComponent)")
+                completedCaptures += 1
+                lastCaptureResult = "PNG saved and path copied (\(completedCaptures) total)"
+                NSLog("Quickshot capture succeeded; count=%ld", completedCaptures)
                 // Capture is complete before showing the overlay; block further captures until it disappears.
                 await captureFlash.show(on: screenshot.screen)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
@@ -102,6 +125,7 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 }
             } catch {
                 let failure = error as NSError
+                lastCaptureResult = "\(failure.domain) \(failure.code): \(failure.localizedDescription)"
                 if failure.domain == SCStreamErrorDomain && failure.code == SCStreamError.Code.userDeclined.rawValue {
                     screenStatus.title = "Screen Recording: macOS denied this running build"
                     setStatusIcon("exclamationmark.triangle", toolTip: "Screen access denied — relaunch the signed build and re-authorize if needed")
@@ -133,7 +157,12 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         Input preflight: \(CGPreflightListenEventAccess())
         Screen preflight: \(CGPreflightScreenCaptureAccess())
         \(hotKeyManager.status.rawValue)
-        Preflight results are advisory; the keyboard monitor and capture API are authoritative.
+        Recognized Command chords: \(recognizedChords)
+        Completed captures: \(completedCaptures)
+        Capture busy: \(capturing)
+        Last capture: \(lastCaptureResult)
+        Frontmost app: \(NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "unknown")
+        Global keyboard readiness requires both an Input Monitoring grant and an enabled event tap.
         If Settings shows enabled but this build is denied, stop the app, rebuild with Apple Development signing,
         remove the old Quickshot permission entries, add this app path, then relaunch.
         """

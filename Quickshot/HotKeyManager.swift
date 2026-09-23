@@ -11,6 +11,13 @@ final class HotKeyManager: NSObject {
         case permissionDenied = "Shortcut: macOS denies input access to this build"
         case tapUnavailable = "Shortcut: keyboard monitor unavailable"
         case sourceUnavailable = "Shortcut: could not attach keyboard monitor"
+
+        nonisolated static func evaluate(inputAllowed: Bool, tapEnabled: Bool, secureInput: Bool) -> Self {
+            // An enabled tap can still only receive foreground events without a valid TCC grant.
+            guard inputAllowed else { return .permissionDenied }
+            guard tapEnabled else { return .tapUnavailable }
+            return secureInput ? .secureInput : .ready
+        }
     }
 
     private(set) var status: RegistrationStatus = .starting
@@ -30,11 +37,13 @@ final class HotKeyManager: NSObject {
         })
         self.worker = worker
         let center = NSWorkspace.shared.notificationCenter
-        for name in [NSWorkspace.didWakeNotification, NSWorkspace.sessionDidBecomeActiveNotification,
-                     NSWorkspace.activeSpaceDidChangeNotification] {
+        for name in [NSWorkspace.didWakeNotification, NSWorkspace.sessionDidBecomeActiveNotification] {
             center.addObserver(self, selector: #selector(resume), name: name, object: nil)
         }
         center.addObserver(self, selector: #selector(refresh), name: NSWorkspace.didActivateApplicationNotification, object: nil)
+        // A Space change is not an input-stream interruption. Resetting here races with the
+        // first Command press on the new Space and can cancel a legitimate chord.
+        center.addObserver(self, selector: #selector(refresh), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
         worker.start()
     }
 
@@ -132,13 +141,20 @@ private final class KeyboardWorker: @unchecked Sendable {
     }
 
     private func connect() {
+        // Do not mistake foreground-only delivery for a globally authorized listener.
+        guard CGPreflightListenEventAccess() else {
+            disconnect()
+            report(.permissionDenied)
+            return
+        }
         if let tap, CFMachPortIsValid(tap) {
             if !CGEvent.tapIsEnabled(tap: tap) {
                 synchronizeKeys()
                 CGEvent.tapEnable(tap: tap, enable: true)
             }
             if CGEvent.tapIsEnabled(tap: tap) {
-                report(IsSecureEventInputEnabled() ? .secureInput : .ready)
+                report(.evaluate(inputAllowed: CGPreflightListenEventAccess(), tapEnabled: true,
+                                 secureInput: IsSecureEventInputEnabled()))
                 return
             }
         }
@@ -165,9 +181,8 @@ private final class KeyboardWorker: @unchecked Sendable {
         self.source = source
         CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)
-        report(CGEvent.tapIsEnabled(tap: tap)
-               ? (IsSecureEventInputEnabled() ? .secureInput : .ready)
-               : (CGPreflightListenEventAccess() ? .tapUnavailable : .permissionDenied))
+        report(.evaluate(inputAllowed: CGPreflightListenEventAccess(),
+                         tapEnabled: CGEvent.tapIsEnabled(tap: tap), secureInput: IsSecureEventInputEnabled()))
     }
 
     private func report(_ status: HotKeyManager.RegistrationStatus) {

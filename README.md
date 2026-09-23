@@ -24,7 +24,7 @@ The shortcut uses a **session-wide, listen-only Core Graphics event tap**, indep
 - A dedicated named thread and run loop handle keyboard events, independently of AppKit menus and screenshot encoding.
 - Only modifier changes and key-down events are observed. The key path checks physical left/right Command flags and a small state machine; it does not read text, log keys, capture images, or synchronously wait for the UI. Only recognized chords are dispatched to the main actor.
 - When healthy, there is no periodic polling timer. Disabled taps recover via callbacks; wake, session activation, Space changes, app activation, and the menu can trigger a health check. A two-second, tolerance-enabled retry timer exists only while monitoring is unavailable or Secure Keyboard Entry is detected.
-- Keys held across startup, wake, or listener interruption must be released before another chord can fire, preventing accidental captures from stale modifier state.
+- Keys held across startup, wake, or listener interruption must be released before another chord can fire, preventing accidental captures from stale modifier state. Ordinary app/Space changes preserve the chord state: the first press on a new desktop must not be canceled by a delayed Space-change notification.
 
 **macOS limitation:** Secure Keyboard Entry (including Terminal's optional Secure Keyboard Entry mode), protected password entry, login/lock screens, and inactive user sessions can suppress third-party keyboard delivery. Quickshot cannot override that. When detected, the menu reports the secure-input state; turn off Terminal's Secure Keyboard Entry for global shortcuts there. The monitor resumes after access returns.
 
@@ -39,7 +39,9 @@ After switching to the signed build:
 3. In Xcode, right-click **Products → Quickshot.app → Show in Finder**. Add that exact app to both permission lists with the plus button and enable it.
 4. Run Quickshot again. Its menu should report **Shortcut: ready**. Try **Take Screenshot**, then left Command + right Command together.
 
-The menu offers **Retry Shortcut** and **Copy Permission Diagnostics**, including the running app path and PID, macOS preflight results, and the actual keyboard-monitor status. The app attempts the real keyboard and ScreenCaptureKit APIs instead of treating a negative preflight result as proof of denial. Shortcut status is separate from capture status, so background retries cannot overwrite capture feedback. The camera icon remains visible even when the shortcut is unavailable; the menu explains the failure.
+If the old entry cannot be repaired in Settings, `tccutil reset ListenEvent com.quickshot.app` resets only Quickshot's Input Monitoring consent. Re-enable the signed app and relaunch. This does not reset Screen Recording or other applications' permissions.
+
+The menu offers **Retry Shortcut** and **Copy Permission Diagnostics**, including the running app path and PID, macOS permission results, keyboard-monitor status, recognized-chord count, completed-capture count, and last capture result. **Global keyboard readiness requires both a valid Input Monitoring grant and an enabled event tap.** An enabled tap alone can work while Quickshot is frontmost without receiving other applications' events. Screen capture still attempts ScreenCaptureKit directly rather than being blocked by its separate preflight result. Shortcut status is separate from capture status, so background retries cannot overwrite capture feedback. The camera icon remains visible even when the shortcut is unavailable; the menu explains the failure.
 
 ## Verification
 
@@ -56,12 +58,16 @@ Run gesture regression checks:
 ```sh
 swiftc Quickshot/CommandChordDetector.swift Tests/CommandChordTests.swift -o /tmp/quickshot-tests
 /tmp/quickshot-tests
+swiftc -swift-version 6 Quickshot/CommandChordDetector.swift Quickshot/HotKeyManager.swift Tests/KeyboardAccessTests.swift -o /tmp/quickshot-access-tests
+/tmp/quickshot-access-tests
 ```
 
 The Debug executable accepts `--smoke-test` to launch the actual AppKit lifecycle, check delegate attachment, menu actions, icon creation, and accessory activation policy, then exit without prompting for permissions.
 
-The Debug executable also accepts `--permission-diagnostics` to attempt keyboard-monitor registration, print the same diagnostic details as the menu command, then exit. Running an app directly from a terminal may affect macOS permission attribution; use the menu diagnostics when investigating an Xcode-launched instance.
+The Debug executable also accepts `--permission-diagnostics` to attempt keyboard-monitor registration, wait three seconds, log/print the same diagnostic details as the menu command, then exit. Launch it with `open -n /path/to/Quickshot.app --args --permission-diagnostics` and inspect Console, or use the menu diagnostics from a normally running instance. **A direct executable launch from a terminal is not a valid global-permission test**: TCC may attribute access to the terminal/host instead of Quickshot. A successful registration under that inherited identity does not prove the Xcode-launched app has global access.
 
 Manual integration check (requires permission approval): verify the icon appears with no Dock entry; grant both permissions; press left and right Command together over each monitor; paste into a text editor and open the resulting PNG. Confirm it matches the chosen display at full resolution and does not include the flash. Verify only the captured display flashes, the frontmost app keeps focus (including in full screen), holding the keys produces one capture, and releasing both allows another. Verify Command-C followed by Command-V does not capture, denied permission is visible in the menu, and repeated captures produce different existing files. Build and smoke checks do not substitute for this permission-dependent desktop check.
 
-For global-listener regression checks, repeat in Finder, a browser, an editor, Terminal with Secure Keyboard Entry off, each Space, and a full-screen app. Repeat after sleep/wake and unlock. Hold one Command key across a Space transition: no capture should occur until both keys have been released and pressed again. With Terminal Secure Keyboard Entry on, open Quickshot's menu to inspect the reported state, then turn it off and verify recovery. Automated gesture tests cover both key orders, held-key suppression, cancellation, interrupted-listener resynchronization, and 10,000 consecutive capture cycles; they do not simulate the macOS desktop transitions.
+For global-listener regression checks, repeat in Finder, a browser, an editor, Terminal with Secure Keyboard Entry off, each Space, and a full-screen app. Repeat after sleep/wake and unlock. Use a trackpad to switch Spaces with one Command key held, then press the other: the healthy listener should preserve that chord. Across a true interruption (sleep or listener restart), release both keys before trying again. With Terminal Secure Keyboard Entry on, open Quickshot's menu to inspect the reported state, then turn it off and verify recovery. Automated gesture tests cover both key orders, held-key suppression, cancellation, interrupted-listener resynchronization, and 10,000 consecutive capture cycles. Access-state tests reject a foreground-only enabled tap with no global permission. These unit tests do not simulate macOS desktop transitions.
+
+Confirmed during the September 23, 2026 fix: TCC logs rejected the old ad-hoc requirement for the signed Xcode build. After resetting only Input Monitoring and authorizing the signed app, normal-desktop and full-screen operation were confirmed by the user; runtime logs recorded 15 recognized chords and 15 completed captures, including with other apps frontmost.
