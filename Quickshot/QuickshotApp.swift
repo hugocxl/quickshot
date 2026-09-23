@@ -15,10 +15,11 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem!
     private let hotKeyManager = HotKeyManager()
     private let captureFeedback = CaptureFeedback()
+    private lazy var permissions = PermissionWindowController(onRetry: { [weak self] in self?.retryShortcut() })
     private let statusMessage = NSMenuItem(title: "Left ⌘ + Right ⌘ to capture", action: nil, keyEquivalent: "")
     private let shortcutStatus = NSMenuItem(title: "Checking keyboard access…", action: nil, keyEquivalent: "")
     private let screenStatus = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-    private var requestedInputPermission = false
+    private var didShowPermissionSetup = false
     private var capturing = false
     private var recognizedChords = 0
     private var completedCaptures = 0
@@ -37,8 +38,7 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         menu.addItem(withTitle: "Take Screenshot", action: #selector(takeScreenshot), keyEquivalent: "")
         menu.addItem(withTitle: "Show Screenshots in Finder", action: #selector(showOutputFolder), keyEquivalent: "")
-        menu.addItem(withTitle: "Screen Recording Permission…", action: #selector(openScreenPermission), keyEquivalent: "")
-        menu.addItem(withTitle: "Input Monitoring Permission…", action: #selector(openInputPermission), keyEquivalent: "")
+        menu.addItem(withTitle: "Permissions & Setup…", action: #selector(showPermissions), keyEquivalent: "")
         menu.addItem(withTitle: "Retry Shortcut", action: #selector(retryShortcut), keyEquivalent: "")
         menu.addItem(withTitle: "Copy Permission Diagnostics", action: #selector(copyDiagnostics), keyEquivalent: "")
         menu.addItem(.separator())
@@ -47,6 +47,10 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.menu = menu
 
         #if DEBUG
+        if CommandLine.arguments.contains("--setup-preview") {
+            permissions.show()
+            return
+        }
         if CommandLine.arguments.contains("--smoke-test") {
             precondition(NSApp.delegate === self)
             precondition(NSApp.activationPolicy() == .accessory)
@@ -83,21 +87,22 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 return
             }
             #endif
-            if status == .permissionDenied && !requestedInputPermission {
-                requestedInputPermission = true
-                CGRequestListenEventAccess()
+            if !didShowPermissionSetup && (status == .permissionDenied || !CGPreflightScreenCaptureAccess()) {
+                didShowPermissionSetup = true
+                permissions.show()
             }
         })
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         captureFeedback.dismiss()
+        permissions.close()
         hotKeyManager.stop()
     }
 
     @objc private func takeScreenshot() {
         guard !capturing else {
-            NSLog("Quickshot capture skipped: previous capture/flash still in progress")
+            NSLog("Quickshot capture skipped: previous capture still in progress")
             return
         }
         capturing = true
@@ -113,6 +118,8 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 guard NSPasteboard.general.setString(screenshotURL.path, forType: .string) else {
                     lastCaptureResult = "PNG saved; clipboard write failed"
                     setStatusIcon("exclamationmark.triangle", toolTip: "Saved screenshot, but clipboard is unavailable")
+                    _ = permissions.presentError(title: "Screenshot saved. Clipboard unavailable.",
+                        detail: "Your PNG is safe at \(screenshotURL.path). Try copying its path again from Finder.")
                     return
                 }
                 setStatusIcon("checkmark", toolTip: "Screenshot path copied: \(screenshotURL.lastPathComponent)")
@@ -130,8 +137,12 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 if failure.domain == SCStreamErrorDomain && failure.code == SCStreamError.Code.userDeclined.rawValue {
                     screenStatus.title = "Screen Recording: macOS denied this running build"
                     setStatusIcon("exclamationmark.triangle", toolTip: "Screen access denied — relaunch the signed build and re-authorize if needed")
+                    permissions.show(reason: "macOS denied screen access to this running build. Allow Screen Recording below, then reopen Quickshot if asked.")
                 } else {
                     setStatusIcon("exclamationmark.triangle", toolTip: error.localizedDescription)
+                    if permissions.presentError(title: "Couldn’t capture your screen", detail: error.localizedDescription, retry: true) {
+                        DispatchQueue.main.async { [weak self] in self?.takeScreenshot() }
+                    }
                 }
                 NSLog("Quickshot capture failed: %@ (%@ %ld)", failure.localizedDescription, failure.domain, failure.code)
             }
@@ -174,17 +185,14 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSPasteboard.general.setString(permissionDiagnostics(), forType: .string)
     }
 
-    @objc private func openScreenPermission() {
-        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!)
-    }
-
-    @objc private func openInputPermission() {
-        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")!)
-    }
+    @objc private func showPermissions() { permissions.show() }
 
     @objc private func showOutputFolder() {
-        guard let directory = try? ScreenshotService.outputDirectory() else { return }
-        NSWorkspace.shared.open(directory)
+        do {
+            NSWorkspace.shared.open(try ScreenshotService.outputDirectory())
+        } catch {
+            _ = permissions.presentError(title: "Couldn’t open your screenshots folder", detail: error.localizedDescription)
+        }
     }
 
     @objc private func quit() {

@@ -186,7 +186,7 @@ private final class CapturePreviewView: NSView {
         check.image = NSImage(systemSymbolName: "checkmark.circle.fill", accessibilityDescription: nil)
         check.contentTintColor = .systemGreen
         addSubview(check)
-        let label = NSTextField(labelWithString: "Path copied")
+        let label = NSTextField(labelWithString: size.width < 170 ? "Copied" : "Path copied")
         label.font = .systemFont(ofSize: 12, weight: .medium)
         label.frame = CGRect(x: 34, y: 9, width: size.width - 68, height: 18)
         addSubview(label)
