@@ -14,7 +14,7 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private var statusItem: NSStatusItem!
     private let hotKeyManager = HotKeyManager()
-    private let captureFlash = CaptureFlash()
+    private let captureFeedback = CaptureFeedback()
     private let statusMessage = NSMenuItem(title: "Left ⌘ + Right ⌘ to capture", action: nil, keyEquivalent: "")
     private let shortcutStatus = NSMenuItem(title: "Checking keyboard access…", action: nil, keyEquivalent: "")
     private let screenStatus = NSMenuItem(title: "", action: nil, keyEquivalent: "")
@@ -91,6 +91,7 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        captureFeedback.dismiss()
         hotKeyManager.stop()
     }
 
@@ -100,6 +101,7 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
         capturing = true
+        captureFeedback.dismiss()
         lastCaptureResult = "Capture in progress"
         Task { @MainActor [self] in
             defer { capturing = false }
@@ -117,8 +119,7 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 completedCaptures += 1
                 lastCaptureResult = "PNG saved and path copied (\(completedCaptures) total)"
                 NSLog("Quickshot capture succeeded; count=%ld", completedCaptures)
-                // Capture is complete before showing the overlay; block further captures until it disappears.
-                await captureFlash.show(on: screenshot.screen)
+                captureFeedback.show(image: screenshot.image, on: screenshot.screen, fileURL: screenshotURL)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
                     guard let self, !capturing else { return }
                     setStatusIcon("camera.viewfinder", toolTip: "Quickshot — Left ⌘ + Right ⌘")
