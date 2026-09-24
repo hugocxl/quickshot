@@ -59,7 +59,7 @@ final class PermissionWindowController: NSObject, NSWindowDelegate {
         alert.messageText = title
         alert.informativeText = detail
         alert.alertStyle = .warning
-        alert.icon = NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: "Quickshot")
+        alert.icon = NSApp.applicationIconImage
         alert.addButton(withTitle: retry ? "Try Again" : "OK")
         if retry { alert.addButton(withTitle: "Cancel") }
         alert.window.level = .floating
@@ -109,13 +109,10 @@ private struct PermissionSetupView: View {
             ScrollView {
             VStack(spacing: 22) {
             VStack(spacing: 12) {
-                Image(systemName: model.ready ? "checkmark" : "camera.viewfinder")
-                    .font(.system(size: 36, weight: .medium))
-                    .foregroundStyle(.white)
-                    .frame(width: 76, height: 76)
-                    .background(LinearGradient(colors: [.blue, .indigo], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-                    .shadow(color: .blue.opacity(0.18), radius: 16, y: 6)
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 88, height: 88)
                     .accessibilityHidden(true)
                 Text(model.ready ? "You’re ready to Quickshot." : "A little setup. A lot less friction.")
                     .font(.system(size: 24, weight: .bold, design: .rounded))

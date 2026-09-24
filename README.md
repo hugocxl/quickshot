@@ -57,6 +57,9 @@ The menu offers **Retry Shortcut** and **Copy Permission Diagnostics**, includin
 
 ## Verification
 
+For app-icon credits, archiving, Developer ID signing, notarization, and the final
+release checklist, see [RELEASE.md](RELEASE.md).
+
 Build:
 
 ```sh
