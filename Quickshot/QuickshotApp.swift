@@ -24,6 +24,8 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var recognizedChords = 0
     private var completedCaptures = 0
     private var lastCaptureResult = "No capture attempted"
+    private let saveDestinationMenu = NSMenu(title: "Save Files To")
+    private var temporaryCleanupTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -37,6 +39,16 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(screenStatus)
         menu.addItem(.separator())
         menu.addItem(withTitle: "Take Screenshot", action: #selector(takeScreenshot), keyEquivalent: "")
+        let saveDestinationItem = NSMenuItem(title: "Save Files To", action: nil, keyEquivalent: "")
+        for destination in SaveDestination.allCases {
+            let item = NSMenuItem(title: destination.title, action: #selector(selectSaveDestination(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = destination.rawValue
+            saveDestinationMenu.addItem(item)
+        }
+        updateSaveDestinationMenu()
+        saveDestinationItem.submenu = saveDestinationMenu
+        menu.addItem(saveDestinationItem)
         menu.addItem(withTitle: "Show Screenshots in Finder", action: #selector(showOutputFolder), keyEquivalent: "")
         menu.addItem(withTitle: "Permissions & Setup…", action: #selector(showPermissions), keyEquivalent: "")
         menu.addItem(withTitle: "Retry Shortcut", action: #selector(retryShortcut), keyEquivalent: "")
@@ -61,6 +73,12 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
         #endif
+
+        cleanupTemporaryScreenshots()
+        temporaryCleanupTimer = Timer.scheduledTimer(withTimeInterval: 60 * 60, repeats: true) { _ in
+            MainActor.assumeIsolated { self.cleanupTemporaryScreenshots() }
+        }
+        temporaryCleanupTimer?.tolerance = 60
 
         hotKeyManager.start(onPress: { [weak self] in
             guard let self else { return }
@@ -95,6 +113,7 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        temporaryCleanupTimer?.invalidate()
         captureFeedback.dismiss()
         permissions.close()
         hotKeyManager.stop()
@@ -153,7 +172,29 @@ final class QuickshotApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         hotKeyManager.refresh()
     }
 
+    @objc private func selectSaveDestination(_ sender: NSMenuItem) {
+        guard let rawValue = sender.representedObject as? String,
+              let destination = SaveDestination(rawValue: rawValue) else { return }
+        SaveDestination.selected = destination
+        updateSaveDestinationMenu()
+    }
+
+    private func updateSaveDestinationMenu() {
+        for item in saveDestinationMenu.items {
+            item.state = (item.representedObject as? String) == SaveDestination.selected.rawValue ? .on : .off
+        }
+    }
+
+    private func cleanupTemporaryScreenshots() {
+        do {
+            try ScreenshotService.cleanupTemporaryScreenshots()
+        } catch {
+            NSLog("Quickshot temporary screenshot cleanup failed: %@", error.localizedDescription)
+        }
+    }
+
     func menuWillOpen(_ menu: NSMenu) {
+        updateSaveDestinationMenu()
         retryShortcut()
         screenStatus.title = CGPreflightScreenCaptureAccess()
             ? "Screen Recording: macOS reports allowed"

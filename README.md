@@ -2,7 +2,7 @@
 
 Quickshot is a macOS menu-bar utility for taking full-display screenshots and copying their file locations for immediate pasting into terminal tools.
 
-The first version has no settings: press **left Command + right Command together** to capture the display under the pointer. Quickshot saves the PNG in `~/Pictures/Quickshot` and copies its absolute path to the clipboard.
+Press **left Command + right Command together** to capture the display under the pointer. Quickshot saves the PNG and copies its absolute path to the clipboard. Choose **Save Files To → Desktop** or **tmp (auto-delete after 24 hours)** from the menu-bar popup. The choice is remembered across launches; Desktop is the default.
 
 ## Run
 
@@ -15,7 +15,7 @@ The project uses **Apple Development** signing with Hugo Corta's team (`JFMWLVS6
 3. Hold **left Command and right Command at the same time**, in either order. One screenshot is taken per hold; release both keys before taking another. The display containing the pointer is the active display for this version, including its full desktop and windows. Ordinary shortcuts such as Command-C cancel the gesture until both Command keys are released.
 4. A soft exposure flash and shutter sound confirm success. The captured view lifts and shrinks into a bottom-right preview labeled **Path copied**. Paste into Claude Code, OpenCode, or another tool immediately; feedback does not delay clipboard availability.
 
-Screenshots remain in `~/Pictures/Quickshot` until you delete them. Names contain a timestamp and unique identifier; captures never overwrite one another. The popup shows permission or capture failures. Screen capture uses ScreenCaptureKit without running a continuous recording stream.
+Desktop screenshots are saved directly in `~/Desktop` and remain until you delete them. Temporary screenshots go in a dedicated `Quickshot` subfolder of the macOS per-user temporary directory. Quickshot removes temporary PNGs older than 24 hours at launch and hourly while running; macOS may also purge temporary files. **Show Screenshots in Finder** opens the selected destination. Existing files are not moved when you change the setting, and screenshots from older versions in `~/Pictures/Quickshot` are left in place. Names contain a timestamp and unique identifier; captures never overwrite one another. The popup shows permission or capture failures. Screen capture uses ScreenCaptureKit without running a continuous recording stream.
 
 ### Capture feedback
 
@@ -77,6 +77,8 @@ swiftc -swift-version 6 Quickshot/CommandChordDetector.swift Quickshot/HotKeyMan
 /tmp/quickshot-access-tests
 swiftc Quickshot/CapturePreviewLayout.swift Tests/CapturePreviewLayoutTests.swift -o /tmp/quickshot-preview-tests
 /tmp/quickshot-preview-tests
+swiftc -swift-version 6 Quickshot/ScreenshotService.swift Tests/ScreenshotStorageTests.swift -o /tmp/quickshot-storage-tests
+/tmp/quickshot-storage-tests
 ```
 
 The Debug executable accepts `--smoke-test` to launch the actual AppKit lifecycle, check delegate attachment, menu actions, icon creation, and accessory activation policy, then exit without prompting for permissions.
