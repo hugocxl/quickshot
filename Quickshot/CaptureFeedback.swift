@@ -152,7 +152,6 @@ final class CaptureFeedback: NSObject {
         self.panel = panel
         panel.alphaValue = fadeIn ? 0 : 1
         panel.orderFrontRegardless()
-        if !fadeIn { (panel.contentView as? CapturePreviewView)?.revealFooter() }
         if fadeIn {
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.18
@@ -168,7 +167,6 @@ final class CaptureFeedback: NSObject {
 private final class CapturePreviewView: NSView {
     private let fileURL: URL
     private let onDismiss: () -> Void
-    private var footer: [NSView] = []
     private(set) var isHovered = false
 
     init(image: CGImage, size: CGSize, fileURL: URL, onDismiss: @escaping () -> Void) {
@@ -179,8 +177,7 @@ private final class CapturePreviewView: NSView {
         layer?.cornerRadius = 14
         layer?.masksToBounds = true
         layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
-        let photo = NSButton(frame: CGRect(x: 0, y: CapturePreviewLayout.footerHeight,
-                                          width: size.width, height: size.height - CapturePreviewLayout.footerHeight))
+        let photo = NSButton(frame: CGRect(origin: .zero, size: size))
         photo.isBordered = false
         photo.image = NSImage(cgImage: image, size: photo.frame.size)
         photo.imageScaling = .scaleAxesIndependently
@@ -191,21 +188,6 @@ private final class CapturePreviewView: NSView {
         photo.setAccessibilityLabel("Open captured screenshot")
         addSubview(photo)
 
-        let check = NSImageView(frame: CGRect(x: 12, y: 10, width: 16, height: 16))
-        check.image = NSImage(systemSymbolName: "checkmark.circle.fill", accessibilityDescription: nil)
-        check.contentTintColor = .systemGreen
-        addSubview(check)
-        let label = NSTextField(labelWithString: size.width < 170 ? "Copied" : "Path copied")
-        label.font = .systemFont(ofSize: 12, weight: .medium)
-        label.frame = CGRect(x: 34, y: 9, width: size.width - 68, height: 18)
-        addSubview(label)
-        let close = NSButton(image: NSImage(systemSymbolName: "xmark", accessibilityDescription: "Dismiss preview")!,
-                             target: self, action: #selector(closePreview))
-        close.frame = CGRect(x: size.width - 30, y: 6, width: 24, height: 24)
-        close.isBordered = false
-        close.contentTintColor = .secondaryLabelColor
-        addSubview(close)
-        footer = [check, label, close]
         addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
                                        owner: self, userInfo: nil))
     }
@@ -214,14 +196,5 @@ private final class CapturePreviewView: NSView {
     override func mouseEntered(with event: NSEvent) { isHovered = true }
     override func mouseExited(with event: NSEvent) { isHovered = false }
 
-    /// The flight lands only the image; ease the footer in so the card doesn't pop when the panels swap.
-    func revealFooter() {
-        footer.forEach { $0.alphaValue = 0 }
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.2
-            footer.forEach { $0.animator().alphaValue = 1 }
-        }
-    }
     @objc private func openImage() { NSWorkspace.shared.open(fileURL); onDismiss() }
-    @objc private func closePreview() { onDismiss() }
 }

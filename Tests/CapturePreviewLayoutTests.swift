@@ -14,7 +14,6 @@ struct CapturePreviewLayoutTests {
             assert(abs(layout.image.width / layout.image.height - screen.width / screen.height) < 0.001)
             assert(abs(layout.panel.maxX - (visible.maxX - 24)) < 0.001)
             assert(abs(layout.panel.minY - (visible.minY + 24)) < 0.001)
-            assert(layout.image.minY == layout.panel.minY + CapturePreviewLayout.footerHeight)
         }
         print("PASS: preview placement, aspect ratio, Dock margin, negative-origin and portrait displays")
     }

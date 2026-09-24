@@ -13,14 +13,14 @@ The project uses **Apple Development** signing with Hugo Corta's team (`JFMWLVS6
 1. Open **Permissions & Setup…** from the menu (also shown automatically when access is missing). Click **Allow** beside **Global shortcut** to authorize Input Monitoring.
 2. Click **Allow** beside **Screen capture** to authorize Screen Recording. The cards update as permissions change. Relaunch if macOS asks. Quickshot explains what each permission enables before opening the system-owned consent dialog or Settings pane.
 3. Hold **left Command and right Command at the same time**, in either order. One screenshot is taken per hold; release both keys before taking another. The display containing the pointer is the active display for this version, including its full desktop and windows. Ordinary shortcuts such as Command-C cancel the gesture until both Command keys are released.
-4. A soft exposure flash and shutter sound confirm success. The captured view lifts and shrinks into a bottom-right preview labeled **Path copied**. Paste into Claude Code, OpenCode, or another tool immediately; feedback does not delay clipboard availability.
+4. A soft exposure flash and shutter sound confirm success. The captured view lifts and shrinks into a bottom-right image preview. Paste into Claude Code, OpenCode, or another tool immediately; feedback does not delay clipboard availability.
 
 Desktop screenshots are saved directly in `~/Desktop` and remain until you delete them. Temporary screenshots go in a dedicated `Quickshot` subfolder of the macOS per-user temporary directory. Quickshot removes temporary PNGs older than 24 hours at launch and hourly while running; macOS may also purge temporary files. **Show Screenshots in Finder** opens the selected destination. Existing files are not moved when you change the setting, and screenshots from older versions in `~/Pictures/Quickshot` are left in place. Names contain a timestamp and unique identifier; captures never overwrite one another. The popup shows permission or capture failures. Screen capture uses ScreenCaptureKit without running a continuous recording stream.
 
 ### Capture feedback
 
 - A 0.72-second Core Animation sequence takes the actual captured image from full-screen size to a rounded, shadowed corner card, with a brief 0.22-second exposure flash.
-- The preview sits inside the captured display's usable area, above the Dock, maintains the screenshot's aspect ratio, and stays for three seconds before fading away. Hovering over it keeps it on screen. Its footer fades in once the flight lands.
+- The preview sits inside the captured display's usable area, above the Dock, maintains the screenshot's aspect ratio, and stays for three seconds before fading away. Hovering over it keeps it on screen.
 - Click the image to open the saved PNG, or click **×** to dismiss it. Appearance never takes keyboard focus; only the small preview accepts clicks, while the full-screen animation is click-through.
 - New captures cancel and replace the previous animation/preview. Quickshot's own windows are excluded from ScreenCaptureKit, so feedback and setup UI cannot appear in subsequent screenshots.
 - Changing Spaces or disconnecting/rearranging displays dismisses feedback rather than leaving it on the wrong desktop.
@@ -83,7 +83,7 @@ swiftc -swift-version 6 Quickshot/ScreenshotService.swift Tests/ScreenshotStorag
 
 The Debug executable accepts `--smoke-test` to launch the actual AppKit lifecycle, check delegate attachment, menu actions, icon creation, and accessory activation policy, then exit without prompting for permissions.
 
-Use `--setup-preview` to inspect the setup window without starting the shortcut monitor. Preview-layout tests verify portrait/landscape aspect ratio, Dock margins, and secondary displays with negative coordinates. For feedback integration, capture repeatedly while the previous preview is visible, verify the PNG excludes it, open/dismiss the thumbnail, and try Reduce Motion, muted output, a full-screen app, and multiple monitors.
+Use `--setup-preview` to inspect the setup window without starting the shortcut monitor. Preview-layout tests verify portrait/landscape aspect ratio, Dock margins, and secondary displays with negative coordinates. For feedback integration, capture repeatedly while the previous preview is visible, verify the PNG excludes it, click the thumbnail to open it, and try Reduce Motion, muted output, a full-screen app, and multiple monitors.
 
 The Debug executable also accepts `--permission-diagnostics` to attempt keyboard-monitor registration, wait three seconds, log/print the same diagnostic details as the menu command, then exit. Launch it with `open -n /path/to/Quickshot.app --args --permission-diagnostics` and inspect Console, or use the menu diagnostics from a normally running instance. **A direct executable launch from a terminal is not a valid global-permission test**: TCC may attribute access to the terminal/host instead of Quickshot. A successful registration under that inherited identity does not prove the Xcode-launched app has global access.
 
