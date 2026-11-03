@@ -60,11 +60,17 @@ The menu offers **Retry Shortcut** and **Copy Permission Diagnostics**, includin
 For app-icon credits, archiving, Developer ID signing, notarization, and the final
 release checklist, see [RELEASE.md](RELEASE.md).
 
-Build:
+Build and validate (Xcode with Swift 6 required):
 
 ```sh
-xcodebuild -project Quickshot.xcodeproj -scheme Quickshot -configuration Debug build
+scripts/build.sh       # signed local Debug build in build/debug/
+scripts/validate.sh    # isolated unsigned build, regression tests and bundle checks
 ```
+
+Agent instructions live in [AGENTS.md](AGENTS.md); `CLAUDE.md` imports that file.
+Release versions and notes come from [CHANGELOG.md](CHANGELOG.md). Pushes to
+`main` automatically publish signed, notarized universal downloads once the
+[release credentials](RELEASE.md#github-actions-setup) are configured.
 
 Use a separate `-derivedDataPath` for automated checks. Never run unsigned verification builds into the same DerivedData directory used by the app running in Xcode, as that replaces its signed bundle. Verify signing with `codesign -dvv -r- /path/to/Quickshot.app`; it should show an Apple Development authority and a certificate-based designated requirement, not `Signature=adhoc` and only a `cdhash` requirement.
 

@@ -20,39 +20,91 @@ To regenerate the PNGs, render `Quickshot/WhiteSur-screenshot.svg` to a transpar
 The current assets were rendered using `@resvg/resvg-js-cli` 2.6.2-beta.1 and
 ImageMagick. No artwork-generation tooling is needed to build the app.
 
-## Build and sign
+## Automated publication
 
-1. Set `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in both target build
-   configurations for each release. The Info.plist uses these build settings.
-2. Run the regression commands in README.md and the manual capture checks below.
-3. Archive with a separate build directory:
+Every push to `main` runs `.github/workflows/release.yml`, which runs
+`scripts/validate.sh` before packaging. CI uses GitHub's
+[Xcode 27 arm64 runner](https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-arm64-Readme.md)
+and selects Xcode 27.1 to match local development.
 
-   ```sh
-   xcodebuild -project Quickshot.xcodeproj -scheme Quickshot \
-     -configuration Release -destination 'generic/platform=macOS' \
-     -derivedDataPath /tmp/quickshot-release-build \
-     -archivePath /tmp/Quickshot.xcarchive archive
-   ```
+Each new commit adds a version to `CHANGELOG.md` (see `AGENTS.md`). The first
+section establishes a baseline; existing history does not need rewriting. CI
+rejects subsequent commits without a newer version, tags versioned commits only
+after packaging succeeds, and publishes the newest version. Stable tags are
+created by automation, never manually.
 
-4. Open the archive in Xcode Organizer and select **Distribute App → Developer
-   ID**, exporting with a **Developer ID Application** certificate and submitting
-   for notarization. Release enables hardened runtime. Development signing is
-   retained for local builds; an Apple Development signature is not a public
-   distribution signature.
-5. Staple and verify the exported app, then package it:
+The pipeline builds both `arm64` and `x86_64`, applies a Developer ID signature
+with hardened runtime, submits the ZIP to Apple's notary service, requires an
+Accepted result, staples the app, and checks Gatekeeper. It then repackages the
+stapled app, extracts and verifies the final ZIP, and generates a SHA-256 checksum.
+This follows [Apple's notarization workflow](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow).
 
-   ```sh
-   xcrun stapler staple /path/to/export/Quickshot.app
-   xcrun stapler validate /path/to/export/Quickshot.app
-   codesign --verify --deep --strict --verbose=2 /path/to/export/Quickshot.app
-   codesign -dvv -r- /path/to/export/Quickshot.app
-   spctl --assess --type execute --verbose=2 /path/to/export/Quickshot.app
-   lipo -archs /path/to/export/Quickshot.app/Contents/MacOS/Quickshot
-   ditto -c -k --keepParent /path/to/export/Quickshot.app /path/to/Quickshot.zip
-   ```
+Assets are uploaded to a draft GitHub release and their uploaded sizes checked
+before publication. Public assets are immutable. Reruns can recover a draft,
+but refuse to overwrite a public release. There is no in-app updater or beta feed.
 
-   Expect Developer ID authority, the `runtime` signing flag, a notarized
-   Gatekeeper assessment, and both `arm64` and `x86_64` architectures.
+Downloads:
+
+- `Quickshot-X.Y.Z-universal.zip`
+- `Quickshot-X.Y.Z-universal.zip.sha256`
+
+## GitHub Actions setup
+
+Run only when credential configuration is requested:
+
+```sh
+scripts/setup-release-secrets.sh /path/to/DeveloperID.p12 --api-key /path/to/AuthKey_KEYID.p8 issuer-uuid
+# Or use Apple ID notarization:
+scripts/setup-release-secrets.sh /path/to/DeveloperID.p12 --apple-id you@example.com
+```
+
+The helper targets `hugocxl/quickshot`, checks the exported certificate/private key,
+prompts for passwords, and uploads secrets through `gh`. It requires authenticated
+GitHub CLI access with permission to manage repository Actions secrets.
+Never commit certificates, private keys or passwords.
+
+Required secrets:
+
+| Secret | Value |
+| --- | --- |
+| `DEVELOPER_ID_APPLICATION_CERTIFICATE` | Base64-encoded Developer ID Application .p12 including private key |
+| `DEVELOPER_ID_APPLICATION_PASSWORD` | Export password |
+| `APPLE_TEAM_ID` | Certificate's Apple developer team |
+| `APPLE_API_KEY_P8` | Base64-encoded App Store Connect key (API-key mode) |
+| `APPLE_API_KEY_ID` | Key ID (API-key mode) |
+| `APPLE_API_ISSUER_ID` | Issuer UUID (API-key mode) |
+| `APPLE_ID` | Apple ID email (Apple-ID mode) |
+| `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password (Apple-ID mode) |
+
+Only one notarization mode is needed. API-key mode takes precedence. CI imports
+the certificate into a temporary keychain and cleans up it and the API key even
+on failure. Missing credentials fail publication; there is no unsigned fallback.
+`GITHUB_TOKEN` provides release/tag access through job-level `contents: write`.
+Repository rules must allow that token to create version tags.
+
+## Local build and packaging
+
+```sh
+scripts/build.sh
+scripts/validate.sh
+RELEASE_VERSION=1.0.1 scripts/release.sh
+```
+
+The last command creates an ad-hoc universal ZIP for local inspection. It is not
+a notarized download. For a distribution build, set `CODESIGN_IDENTITY` to a
+Developer ID identity and supply `NOTARY_KEYCHAIN_PROFILE`, or the API-key / Apple-ID
+environment variables documented in `scripts/release.sh`. Set
+`REQUIRE_NOTARIZATION=1` to enforce public-distribution requirements.
+
+`CHANGELOG.md` is the version source for scripted builds. Both marketing version
+and bundle build number (Git commit count) are passed to Xcode, so no per-release
+project-file edits are needed. Xcode's direct-build fallback remains 1.0 / 1.
+Build directories for local Debug (`build/debug`), validation
+(`build/validation-derived`) and Release (`build/release-derived`) are isolated
+from Xcode's normal DerivedData and from one another.
+
+Run the manual checks below for capture, permissions or signing changes before
+requesting a publication push. CI cannot establish permission-dependent behavior.
 
 ## Final desktop checks
 
