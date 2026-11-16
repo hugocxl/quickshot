@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0 - 2026-11-16
+
+### Changed
+
+- Match the app icon, buttons, and highlights with a warm orange palette.
+- Spell out Left and Right in the setup shortcut so each Command key is clear.
+
 ## 1.1.0 - 2026-11-16
 
 ### Changed

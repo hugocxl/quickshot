@@ -158,10 +158,10 @@ private struct PermissionSetupView: View {
             }
             Divider().padding(.horizontal, 28)
             HStack(spacing: 8) {
-                Text("⌘ L").font(.system(size: 14, weight: .medium, design: .monospaced))
+                Text("⌘ Left").font(.system(size: 14, weight: .medium, design: .monospaced))
                     .padding(8).background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
                 Text("+").foregroundStyle(.tertiary)
-                Text("⌘ R").font(.system(size: 14, weight: .medium, design: .monospaced))
+                Text("⌘ Right").font(.system(size: 14, weight: .medium, design: .monospaced))
                     .padding(8).background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
                 Text("Press together").font(.system(size: 12)).foregroundStyle(.secondary)
                 Spacer()
@@ -171,6 +171,7 @@ private struct PermissionSetupView: View {
                     .keyboardShortcut(.defaultAction)
             }.padding(28)
         }
+        .tint(Color.accentColor)
         .frame(width: 520, height: 580)
         .background(Color(nsColor: .windowBackgroundColor))
     }
@@ -180,9 +181,9 @@ private struct PermissionSetupView: View {
         HStack(spacing: 14) {
             Image(systemName: symbol)
                 .font(.system(size: 23, weight: .regular))
-                .foregroundStyle(.blue)
+                .foregroundStyle(Color.accentColor)
                 .frame(width: 44, height: 44)
-                .background(.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 5) {
                 Text(title).font(.system(size: 14, weight: .semibold))
