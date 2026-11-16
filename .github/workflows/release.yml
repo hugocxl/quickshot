@@ -23,7 +23,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Version the pushed commits
@@ -123,7 +123,7 @@ jobs:
           gh release edit "$TAG" --draft=false --prerelease=false "$LATEST_FLAG"
       - name: Preserve validation logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: validation-logs
           path: build/validation/*.log

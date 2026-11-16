@@ -1,5 +1,11 @@
 Quickshot app icon
 
+Original abstract capture artwork created for Quickshot, November 16, 2026.
+Source: Quickshot-icon.svg
+License: MIT, like the Quickshot application source.
+
+Previous Quickshot app icon
+
 Artwork: accessories-screenshot.svg from WhiteSur Icon Theme
 Author: Vince Liuice and WhiteSur contributors (see WhiteSur-AUTHORS.txt)
 Project: https://github.com/vinceliuice/WhiteSur-icon-theme
@@ -7,7 +13,6 @@ Revision: 73d8040da51a9ed74e47c7366e7e9ff437601a5c
 Source: src/apps/scalable/accessories-screenshot.svg
 License: GNU General Public License, version 3 (see WhiteSur-COPYING.txt)
 
-The original SVG is included as WhiteSur-screenshot.svg. Quickshot's app-icon
-PNGs are rasterized/resized copies of that artwork, prepared September 24, 2026.
+The original SVG is included as WhiteSur-screenshot.svg. It was used for Quickshot's app-icon PNGs before November 16, 2026.
 The artwork's license is separate from Quickshot's application source license.
 The SVG, authors, license, and this notice ship in the application's Resources.

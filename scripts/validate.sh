@@ -17,7 +17,7 @@ test -x "$APP/Contents/MacOS/Quickshot"
 plutil -lint "$APP/Contents/Info.plist"
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist")" = com.quickshot.app
 test "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' "$APP/Contents/Info.plist")" = true
-for resource in AppIcon.icns Assets.car IconCredits.txt WhiteSur-screenshot.svg WhiteSur-AUTHORS.txt WhiteSur-COPYING.txt; do
+for resource in AppIcon.icns Assets.car Quickshot-icon.svg IconCredits.txt WhiteSur-screenshot.svg WhiteSur-AUTHORS.txt WhiteSur-COPYING.txt; do
     test -f "$APP/Contents/Resources/$resource"
 done
 git diff --check

@@ -5,20 +5,14 @@ Intel), Developer ID–signed, notarized app for direct download.
 
 ## Artwork
 
-The app icon is the predesigned screenshot icon from
-[WhiteSur Icon Theme](https://github.com/vinceliuice/WhiteSur-icon-theme), a macOS
-Big Sur–style collection by Vince Liuice and contributors. The ten macOS icon
-slots (16 through 1024 pixels) are in `Quickshot/Assets.xcassets/AppIcon.appiconset`.
-Xcode compiles the catalog into the app icon and sets the bundle icon metadata.
+The app icon is Quickshot’s original abstract capture mark, licensed under MIT.
+Its editable source is `Quickshot/Quickshot-icon.svg`. The ten macOS icon slots
+(16 through 1024 pixels) live in `Quickshot/Assets.xcassets/AppIcon.appiconset`.
+Run `scripts/generate-icon.sh` to render them and the README image. This uses a
+pinned development-only SVG renderer; no artwork tooling ships with the app.
 
-`Quickshot/IconCredits.txt` records the pinned upstream revision. The original
-SVG, author list, and GPLv3 license are bundled in Resources alongside the credit
-notice, so the distributed artwork includes its source and license.
-
-To regenerate the PNGs, render `Quickshot/WhiteSur-screenshot.svg` to a transparent
-1024-pixel PNG with resvg, then resize to each size listed in `Contents.json`.
-The current assets were rendered using `@resvg/resvg-js-cli` 2.6.2-beta.1 and
-ImageMagick. No artwork-generation tooling is needed to build the app.
+The previous WhiteSur SVG, authors, GPLv3 license, and provenance notice remain
+bundled in Resources. `Quickshot/IconCredits.txt` distinguishes both artworks.
 
 ## Automated publication
 
