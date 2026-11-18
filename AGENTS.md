@@ -12,12 +12,16 @@ scripts/test.sh                   # the standalone Swift regression tests
 scripts/changelog.sh check        # changelog format and version order
 scripts/validate.sh               # build (warnings are errors), tests, app bundle
 RELEASE_VERSION=X.Y.Z scripts/release.sh  # ad-hoc universal ZIP for inspection
+npm ci && npm run build:site && npm run check:site  # the website in _site/
 ```
 
 A change is finished only when `scripts/validate.sh` passes. The release workflow
 runs the same script.
 
 - Build products and logs live in the ignored `build/`.
+- The website in `website/` builds with the `@hugocxl/design-system`, `@hugocxl/icons`
+  and `@hugocxl/vectors` npm packages, which are site-only devDependencies; the app
+  ships none of them. The Pages workflow builds with their latest releases.
 - `scripts/validate.sh` builds unsigned into its own DerivedData. Never replace the
   signed app running from Xcode with that build; `scripts/build.sh` keeps
   development signing.

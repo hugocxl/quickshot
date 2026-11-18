@@ -6,6 +6,9 @@ on:
       - website/**
       - scripts/build-site.mjs
       - scripts/check-site.mjs
+      - scripts/site-artwork.mjs
+      - package.json
+      - package-lock.json
       - CHANGELOG.md
       - media/icon.png
       - .github/workflows/pages.yml
@@ -29,6 +32,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save @hugocxl/design-system@latest @hugocxl/icons@latest @hugocxl/vectors@latest
       - run: node scripts/build-site.mjs
       - run: node scripts/check-site.mjs
       - uses: actions/configure-pages@v5

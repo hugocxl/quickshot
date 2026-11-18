@@ -1,8 +1,9 @@
 // Build the GitHub Pages site from website/ into _site/.
-// Pages follow the P9 design system vendored in website/system, with Stroke icons
-// and vectors vendored in website/artwork (see scripts/sync-design-system.mjs).
-// Run from the repository root: node scripts/build-site.mjs
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+// Pages follow the P9 design system from @hugocxl/design-system, with Stroke icons
+// from @hugocxl/icons and vectors from @hugocxl/vectors (npm devDependencies).
+// Run from the repository root after npm ci: node scripts/build-site.mjs
+import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { designSystem, icon, vector } from "./site-artwork.mjs";
 
 const out = "_site";
 const read = (path) => readFileSync(path, "utf8");
@@ -35,19 +36,17 @@ const changelog = [
   "      </ol>",
 ].join("\n");
 
-// ─── Artwork, inlined so it draws in ink through currentColor ───────────
-const icon = (name) =>
-  read(`website/artwork/icons/${name}.svg`)
-    .trim()
-    .replace(/<svg[^>]*>/, `<svg class="ds-icon" data-icon="${name}" viewBox="0 0 16 16" fill="none" aria-hidden="true">`)
-    .replace(/>\s+</g, "><");
-const vector = (name) =>
-  read(`website/artwork/vectors/${name}.svg`)
-    .trim()
-    .replace(/<svg ([^>]*)>/, (_, attributes) =>
-      `<svg class="ds-vector" data-vector="${name}" ${attributes.replace(/\s*xmlns="[^"]*"/, "").replace(/\s*color="[^"]*"/, "").trim()}>`,
-    )
-    .replace(/>\s+</g, "><");
+// ─── Artwork the templates name, from the packages ──────────────────────
+const templates = [
+  ...readdirSync("website").filter((name) => name.endsWith(".html")).map((name) => `website/${name}`),
+  ...readdirSync("website/partials").map((name) => `website/partials/${name}`),
+];
+const artwork = async (kind, markup) => {
+  const names = new Set(templates.flatMap((path) => [...read(path).matchAll(new RegExp(`\\{\\{${kind} ([\\w-]+)\\}\\}`, "g"))].map((m) => m[1])));
+  return new Map(await Promise.all([...names].map(async (name) => [name, await markup(name)])));
+};
+const icons = await artwork("icon", icon);
+const vectors = await artwork("vector", vector);
 
 // ─── Templates ──────────────────────────────────────────────────────────
 const partial = (name) => read(`website/partials/${name}.html`).replace(/\n$/, "");
@@ -59,8 +58,8 @@ function render(template, values) {
     })
     .replace("{{masthead}}", partial("masthead"))
     .replace("{{footer}}", partial("footer"))
-    .replace(/\{\{icon ([\w-]+)\}\}/g, (_, name) => icon(name))
-    .replace(/\{\{vector ([\w-]+)\}\}/g, (_, name) => vector(name))
+    .replace(/\{\{icon ([\w-]+)\}\}/g, (_, name) => icons.get(name))
+    .replace(/\{\{vector ([\w-]+)\}\}/g, (_, name) => vectors.get(name))
     .replace(/\{\{([\w-]+)\}\}/g, (match, key) => (key in values ? values[key] : match));
   const unknown = html.match(/\{\{[^}]*\}\}/);
   if (unknown) throw new Error(`Unknown template value ${unknown[0]}`);
@@ -69,7 +68,7 @@ function render(template, values) {
 
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
-cpSync("website/system", `${out}/system`, { recursive: true, filter: (path) => !path.endsWith(".DS_Store") });
+cpSync(designSystem, `${out}/system`, { recursive: true, filter: (path) => !path.endsWith(".DS_Store") });
 cpSync("website/site.css", `${out}/site.css`);
 cpSync("media/icon.png", `${out}/icon.png`);
 

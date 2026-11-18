@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.3 - 2026-11-18
+
+### Changed
+
+- Keep the Quickshot website's design, icons and illustrations up to date with the
+  latest shared design system.
+
 ## 1.2.2 - 2026-11-18
 
 ### Changed

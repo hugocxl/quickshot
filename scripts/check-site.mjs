@@ -1,8 +1,11 @@
 // Check the built site in _site/: links, anchors, assets and the P9 page contract.
-// Dependency-free: a small HTML tree parser is enough for the pages build-site.mjs writes.
+// A small HTML tree parser is enough for the pages build-site.mjs writes. Artwork and
+// system assets are compared with the @hugocxl packages in node_modules.
 // Run from the repository root after node scripts/build-site.mjs.
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import assert from "node:assert/strict";
+import { designSystem, icon, vector } from "./site-artwork.mjs";
 
 const site = "_site";
 const pages = ["index.html", "docs.html", "changelog.html"];
@@ -38,7 +41,24 @@ const has = (element, name) => (element.attrs?.class ?? "").split(/\s+/).include
 const text = (node) => (node.text !== undefined ? node.text : (node.children ?? []).map(text).join(""));
 const find = (node, test) => all(node).filter(test);
 
-const docs = new Map(pages.map((name) => [name, parse(readFileSync(`${site}/${name}`, "utf8"))]));
+// The design system's files are copied verbatim, and its core assets are there.
+for (const path of ["ds.css", "ds.js", "theme.js"]) assert.ok(existsSync(join(designSystem, path)), `@hugocxl/design-system: no system/${path}`);
+for (const path of readdirSync(designSystem, { recursive: true }).map(String)) {
+  if (path.endsWith(".DS_Store") || !statSync(join(designSystem, path)).isFile()) continue;
+  assert.ok(readFileSync(join(designSystem, path)).equals(readFileSync(`${site}/system/${path}`)), `system/${path} differs from @hugocxl/design-system`);
+}
+
+// Every inlined icon and vector is exactly the package's artwork.
+const sources = new Map(pages.map((name) => [name, readFileSync(`${site}/${name}`, "utf8")]));
+for (const [name, html] of sources) {
+  const artworks = [...html.matchAll(/<svg class="ds-(icon|vector)" data-(?:icon|vector)="([\w-]+)"[\s\S]*?<\/svg>/g)];
+  assert.equal(artworks.length, html.match(/<svg\b/g)?.length ?? 0, `${name}: svg that is not an inlined icon or vector`);
+  for (const [markup, kind, artwork] of artworks) {
+    assert.equal(markup, await (kind === "icon" ? icon : vector)(artwork), `${name}: ${kind} ${artwork} differs from @hugocxl/${kind}s`);
+  }
+}
+
+const docs = new Map(pages.map((name) => [name, parse(sources.get(name))]));
 const ids = (doc) => new Set(all(doc).map((el) => el.attrs.id).filter(Boolean));
 const local = (href) => !/^(https?:|mailto:|data:)/.test(href);
 let links = 0;
@@ -110,12 +130,12 @@ for (const [name, doc] of docs) {
   for (const svg of find(body, (el) => el.tag === "svg")) {
     assert.ok(!find(doc, (el) => has(el, "ds-accent")).some((accent) => all(accent).includes(svg)), `${name}: artwork in accent`);
     if (has(svg, "ds-icon")) {
-      assert.ok(existsSync(`website/artwork/icons/${svg.attrs["data-icon"]}.svg`), `${name}: unknown icon ${svg.attrs["data-icon"]}`);
+      assert.ok(svg.attrs["data-icon"], `${name}: icon without a name`);
       assert.equal(svg.attrs["aria-hidden"], "true", `${name}: icon aria-hidden`);
       assert.equal(svg.attrs.viewbox, "0 0 16 16", `${name}: icon viewBox`);
     } else {
       assert.ok(has(svg, "ds-vector"), `${name}: svg is neither an icon nor a vector`);
-      assert.ok(existsSync(`website/artwork/vectors/${svg.attrs["data-vector"]}.svg`), `${name}: unknown vector ${svg.attrs["data-vector"]}`);
+      assert.ok(svg.attrs["data-vector"], `${name}: vector without a name`);
       assert.ok(!("xmlns" in svg.attrs) && !("color" in svg.attrs), `${name}: vector root attributes`);
       assert.equal(svg.attrs.role, "img", `${name}: vector role`);
       assert.ok(elements(svg).some((el) => el.tag === "title" && text(el).trim()), `${name}: vector title`);
