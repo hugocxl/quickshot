@@ -27,10 +27,10 @@ const inline = (text) =>
 const day = (iso) =>
   new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 const changelog = [
-  '      <ol class="p9-index">',
+  '      <ol class="ds-index">',
   ...releases.map(
     (release) =>
-      `        <li id="v${release.version}"><span class="p9-label"><time datetime="${release.date}">${day(release.date)}</time></span><div><h3>Version ${release.version}</h3><p>${release.entries.map(inline).join(" ")}</p></div></li>`,
+      `        <li id="v${release.version}"><span class="ds-label"><time datetime="${release.date}">${day(release.date)}</time></span><div><h3>Version ${release.version}</h3><p>${release.entries.map(inline).join(" ")}</p></div></li>`,
   ),
   "      </ol>",
 ].join("\n");
@@ -39,13 +39,13 @@ const changelog = [
 const icon = (name) =>
   read(`website/artwork/icons/${name}.svg`)
     .trim()
-    .replace(/<svg[^>]*>/, `<svg class="p9-icon" data-icon="${name}" viewBox="0 0 16 16" fill="none" aria-hidden="true">`)
+    .replace(/<svg[^>]*>/, `<svg class="ds-icon" data-icon="${name}" viewBox="0 0 16 16" fill="none" aria-hidden="true">`)
     .replace(/>\s+</g, "><");
 const vector = (name) =>
   read(`website/artwork/vectors/${name}.svg`)
     .trim()
     .replace(/<svg ([^>]*)>/, (_, attributes) =>
-      `<svg class="p9-vector" data-vector="${name}" ${attributes.replace(/\s*xmlns="[^"]*"/, "").replace(/\s*color="[^"]*"/, "").trim()}>`,
+      `<svg class="ds-vector" data-vector="${name}" ${attributes.replace(/\s*xmlns="[^"]*"/, "").replace(/\s*color="[^"]*"/, "").trim()}>`,
     )
     .replace(/>\s+</g, "><");
 

@@ -1,21 +1,21 @@
 {{head title="Docs · Quickshot" canonical="docs.html" description="Install Quickshot, allow its two permissions, take your first screenshot and paste its path. Storage, privacy, troubleshooting and building from source."}}
 </head>
-<body class="p9" data-layout="plain">
+<body class="ds" data-layout="plain">
 {{masthead}}
   <main>
-    <article class="p9-column p9-opening">
-      <hgroup class="p9-title">
+    <article class="ds-column ds-opening">
+      <hgroup class="ds-title">
         <h1>Using Quickshot</h1>
         <p>Install, capture, paste and troubleshoot</p>
       </hgroup>
-      <ul class="p9-meta">
-        <li class="p9-label">Version {{version}}</li>
-        <li class="p9-label">macOS 14 or later</li>
+      <ul class="ds-meta">
+        <li class="ds-label">Version {{version}}</li>
+        <li class="ds-label">macOS 14 or later</li>
       </ul>
-      <section class="p9-section">
-        <p>Quickshot lives in the menu bar. Press left Command and right Command together, and it saves the display under your pointer as a PNG and copies the file’s absolute path to your clipboard. <span class="p9-muted">It captures a whole display. It does not offer region selection or annotation.</span></p>
+      <section class="ds-section">
+        <p>Quickshot lives in the menu bar. Press left Command and right Command together, and it saves the display under your pointer as a PNG and copies the file’s absolute path to your clipboard. <span class="ds-muted">It captures a whole display. It does not offer region selection or annotation.</span></p>
       </section>
-      <section class="p9-section" id="install">
+      <section class="ds-section" id="install">
         <h2>Install</h2>
         <p>Quickshot needs macOS 14 Sonoma or later and runs natively on Apple silicon and Intel.</p>
         <ol>
@@ -23,30 +23,30 @@
           <li>Unzip it and move <strong>Quickshot.app</strong> to <strong>Applications</strong>.</li>
           <li>Open Quickshot. A camera viewfinder icon appears in the menu bar. There is no Dock icon.</li>
         </ol>
-        <p>Each release is signed with a Developer ID, notarized by Apple and published with a SHA-256 checksum. <span class="p9-muted">Downloads appear on the Releases page once the first signed release is published. Until then, you can <a href="#build">build Quickshot from source</a>.</span></p>
+        <p>Each release is signed with a Developer ID, notarized by Apple and published with a SHA-256 checksum. <span class="ds-muted">Downloads appear on the Releases page once the first signed release is published. Until then, you can <a href="#build">build Quickshot from source</a>.</span></p>
       </section>
-      <section class="p9-section" id="permissions">
+      <section class="ds-section" id="permissions">
         <h2>Allow two permissions</h2>
         <p>Open <strong>Permissions &amp; Setup…</strong> from the menu. It also appears on its own when access is missing, and explains what each permission enables before macOS asks.</p>
         <ul>
           <li><strong>Input Monitoring</strong> lets Quickshot recognize the two Command keys from any app.</li>
           <li><strong>Screen Recording</strong> lets it take the screenshot.</li>
         </ul>
-        <p>Click <strong>Allow</strong> beside each one. The setup window updates as permissions change. <span class="p9-muted">Relaunch Quickshot if macOS asks. You can also close the window or choose <strong>Set Up Later</strong>.</span></p>
+        <p>Click <strong>Allow</strong> beside each one. The setup window updates as permissions change. <span class="ds-muted">Relaunch Quickshot if macOS asks. You can also close the window or choose <strong>Set Up Later</strong>.</span></p>
       </section>
-      <section class="p9-section" id="capture">
+      <section class="ds-section" id="capture">
         <h2>Take a screenshot</h2>
-        <p>Move your pointer to the display you want, then press <strong>left Command and right Command together</strong>, in either order. <span class="p9-muted">Quickshot takes one screenshot per press. Release both keys before the next one.</span></p>
-        <p>Ordinary shortcuts such as Command-C cancel the gesture, so copying and pasting never takes a screenshot by accident. <span class="p9-muted">You can also choose <strong>Take Screenshot</strong> from the menu.</span></p>
-        <p>Quickshot saves the whole display at its native resolution, with every window on it, and leaves out its own preview and setup windows. <span class="p9-muted">It works the same in full-screen apps and on every Space.</span></p>
+        <p>Move your pointer to the display you want, then press <strong>left Command and right Command together</strong>, in either order. <span class="ds-muted">Quickshot takes one screenshot per press. Release both keys before the next one.</span></p>
+        <p>Ordinary shortcuts such as Command-C cancel the gesture, so copying and pasting never takes a screenshot by accident. <span class="ds-muted">You can also choose <strong>Take Screenshot</strong> from the menu.</span></p>
+        <p>Quickshot saves the whole display at its native resolution, with every window on it, and leaves out its own preview and setup windows. <span class="ds-muted">It works the same in full-screen apps and on every Space.</span></p>
       </section>
-      <section class="p9-section" id="paste">
+      <section class="ds-section" id="paste">
         <h2>Paste the path</h2>
-        <p>The clipboard holds the <strong>path</strong> of the PNG, not the image itself. Paste it into your terminal, a coding agent or any other tool that accepts local image paths. <span class="p9-muted">The path is ready as soon as the screenshot is saved. Every file name has a timestamp and a unique identifier, so captures never overwrite one another.</span></p>
+        <p>The clipboard holds the <strong>path</strong> of the PNG, not the image itself. Paste it into your terminal, a coding agent or any other tool that accepts local image paths. <span class="ds-muted">The path is ready as soon as the screenshot is saved. Every file name has a timestamp and a unique identifier, so captures never overwrite one another.</span></p>
       </section>
-      <section class="p9-section" id="preview">
+      <section class="ds-section" id="preview">
         <h2>The preview</h2>
-        <p>A soft flash and the macOS shutter sound confirm each capture, and the screenshot shrinks into a small preview in the bottom-right corner of that display. <span class="p9-muted">It never takes keyboard focus, so you keep typing where you were.</span></p>
+        <p>A soft flash and the macOS shutter sound confirm each capture, and the screenshot shrinks into a small preview in the bottom-right corner of that display. <span class="ds-muted">It never takes keyboard focus, so you keep typing where you were.</span></p>
         <ul>
           <li>The preview stays for three seconds. Hover over it to keep it on screen.</li>
           <li>Click it to open the PNG, or use its close button to dismiss it.</li>
@@ -55,11 +55,11 @@
           <li>VoiceOver announces that the path was copied.</li>
         </ul>
       </section>
-      <section class="p9-section" id="storage">
+      <section class="ds-section" id="storage">
         <h2>Where captures go</h2>
         <p>Choose <strong>Save Files To</strong> in the menu. Quickshot remembers your choice, and Desktop is the default.</p>
-        <div class="p9-table-scroll" tabindex="0">
-          <table class="p9-table">
+        <div class="ds-table-scroll" tabindex="0">
+          <table class="ds-table">
             <thead><tr><th scope="col">Destination</th><th scope="col">Folder</th><th scope="col">Kept</th></tr></thead>
             <tbody>
               <tr><th scope="row">Desktop</th><td>Your Desktop</td><td>Until you delete them</td></tr>
@@ -67,14 +67,14 @@
             </tbody>
           </table>
         </div>
-        <p>macOS can also clear temporary files sooner, so a path in tmp is not permanent. <span class="p9-muted">Changing the destination leaves existing captures where they are. <strong>Show Screenshots in Finder</strong> opens the current folder.</span></p>
+        <p>macOS can also clear temporary files sooner, so a path in tmp is not permanent. <span class="ds-muted">Changing the destination leaves existing captures where they are. <strong>Show Screenshots in Finder</strong> opens the current folder.</span></p>
       </section>
-      <section class="p9-section" id="privacy">
+      <section class="ds-section" id="privacy">
         <h2>Privacy</h2>
-        <p>Screenshots stay on your Mac. Quickshot has no account and no upload service. <span class="p9-muted">Input Monitoring is only used to recognize the two Command keys: Quickshot does not read or record your typing, and every key press passes through unchanged.</span></p>
+        <p>Screenshots stay on your Mac. Quickshot has no account and no upload service. <span class="ds-muted">Input Monitoring is only used to recognize the two Command keys: Quickshot does not read or record your typing, and every key press passes through unchanged.</span></p>
         <p>Cleanup only removes expired Quickshot screenshots from its temporary folder. It never touches other files or your Desktop captures.</p>
       </section>
-      <section class="p9-section" id="troubleshooting">
+      <section class="ds-section" id="troubleshooting">
         <h2>Troubleshooting</h2>
         <p>Open <strong>Permissions &amp; Setup…</strong> to check access. Its <strong>Already enabled, but not working?</strong> section helps when a permission looks on but has no effect, and <strong>Show This App in Finder</strong> points to the exact app to allow.</p>
         <ul>
@@ -82,19 +82,19 @@
           <li>Secure Keyboard Entry, including Terminal’s optional mode, and password fields can pause global shortcuts. The menu shows when this happens, and the shortcut resumes once they end.</li>
           <li>Use <strong>Take Screenshot</strong> to check capture on its own, apart from the keyboard shortcut.</li>
         </ul>
-        <p>For a bug report, <strong>Copy Permission Diagnostics</strong> gathers useful details. <span class="p9-muted">Review them before sharing in a <a href="https://github.com/hugocxl/quickshot/issues">GitHub issue</a>.</span></p>
+        <p>For a bug report, <strong>Copy Permission Diagnostics</strong> gathers useful details. <span class="ds-muted">Review them before sharing in a <a href="https://github.com/hugocxl/quickshot/issues">GitHub issue</a>.</span></p>
       </section>
-      <section class="p9-section" id="build">
+      <section class="ds-section" id="build">
         <h2>Build from source</h2>
         <p>Open <code>Quickshot.xcodeproj</code> in Xcode with Swift 6 support and select your development team under Signing &amp; Capabilities, or build from the terminal.</p>
-        <div class="p9-code"><pre tabindex="0"><code>git clone https://github.com/hugocxl/quickshot.git
+        <div class="ds-code"><pre tabindex="0"><code>git clone https://github.com/hugocxl/quickshot.git
 cd quickshot
 scripts/build.sh</code></pre><button type="button">Copy</button></div>
-        <p><code>scripts/validate.sh</code> runs an isolated build, the regression tests and the app bundle checks. <span class="p9-muted">The <a href="https://github.com/hugocxl/quickshot/blob/main/docs/DEVELOPMENT.md">development notes</a> describe the architecture and manual checks, and <a href="https://github.com/hugocxl/quickshot/blob/main/RELEASE.md">RELEASE.md</a> covers signing and publishing.</span></p>
+        <p><code>scripts/validate.sh</code> runs an isolated build, the regression tests and the app bundle checks. <span class="ds-muted">The <a href="https://github.com/hugocxl/quickshot/blob/main/docs/DEVELOPMENT.md">development notes</a> describe the architecture and manual checks, and <a href="https://github.com/hugocxl/quickshot/blob/main/RELEASE.md">RELEASE.md</a> covers signing and publishing.</span></p>
       </section>
-      <section class="p9-section" id="license">
+      <section class="ds-section" id="license">
         <h2>License</h2>
-        <p>Quickshot’s code and icon are <a href="https://github.com/hugocxl/quickshot/blob/main/LICENSE">MIT licensed</a>. <span class="p9-muted">The previously used WhiteSur artwork stays bundled with its original <a href="https://github.com/hugocxl/quickshot/blob/main/Quickshot/IconCredits.txt">credits and GPLv3 license</a>.</span></p>
+        <p>Quickshot’s code and icon are <a href="https://github.com/hugocxl/quickshot/blob/main/LICENSE">MIT licensed</a>. <span class="ds-muted">The previously used WhiteSur artwork stays bundled with its original <a href="https://github.com/hugocxl/quickshot/blob/main/Quickshot/IconCredits.txt">credits and GPLv3 license</a>.</span></p>
       </section>
     </article>
   </main>

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2 - 2026-11-18
+
+### Changed
+
+- Introduce Quickshot on GitHub with a shorter overview that points to the website.
+
 ## 1.2.1 - 2026-11-18
 
 ### Added
