@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.1 - 2026-11-18
+
+### Added
+
+- Visit the new [Quickshot website](https://hugocxl.github.io/quickshot/) for setup,
+  storage and troubleshooting guides and every version's changes.
+
 ## 1.2.0 - 2026-11-16
 
 ### Changed

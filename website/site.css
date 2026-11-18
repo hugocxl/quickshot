@@ -1,0 +1,8 @@
+/* Quickshot site additions to the P9 design system. Only --p9-* properties are
+   used here: no new colors, fonts, sizes, weights, radii, shadows or gradients. */
+
+/* The single filled action keeps section spacing after the last section. */
+.p9-opening > .p9-button { margin-top: var(--p9-space-7) }
+
+/* The changelog index keeps section spacing after its lead. */
+.p9-section + .p9-index { margin-top: var(--p9-space-7) }
