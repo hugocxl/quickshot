@@ -33,7 +33,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898283+github-actions[bot]@users.noreply.github.com'
-          # Local tags until the release is built; they're pushed with it.
+          # Local tags until validation passes; they're pushed before signing.
           scripts/changelog.sh tag "$BEFORE" "$GITHUB_SHA"
           VERSION="$(scripts/changelog.sh version)"
           echo "RELEASE_TAG=v$VERSION" >> "$GITHUB_ENV"
@@ -46,6 +46,10 @@ jobs:
           swift --version
       - name: Validate build, tests and app bundle
         run: scripts/validate.sh
+      - name: Push the version tags
+        # Every validated version keeps its tag even when signing or publishing
+        # fails; a rerun finds the tags and only finishes the release.
+        run: git push origin --tags
       - name: Import Developer ID certificate
         env:
           CERTIFICATE_P12: ${{ secrets.DEVELOPER_ID_APPLICATION_CERTIFICATE }}
@@ -94,7 +98,6 @@ jobs:
         run: |
           set -euo pipefail
           TAG="$RELEASE_TAG"
-          git push origin --tags
           # The changelog since the latest release, so a push of several
           # commits lists them all.
           PREVIOUS="$(gh release view --json tagName --jq .tagName 2>/dev/null || true)"

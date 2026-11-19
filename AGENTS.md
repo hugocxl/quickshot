@@ -108,10 +108,12 @@ runs the same script.
 
 ## Releasing
 
-Every push to `main` runs the Release workflow. It tags each pushed commit with its
-changelog version, then validates, signs, notarizes and publishes the newest one as
-a universal ZIP with its SHA-256 checksum. Don't tag versions by hand, and never
-replace a public release's assets.
+Every push to `main` runs the Release workflow. Once validation passes, it pushes a
+`vX.Y.Z` tag for each pushed commit's changelog version, before signing, then
+signs, notarizes and publishes the newest one as a universal ZIP with its SHA-256
+checksum. Don't tag versions by hand, and never replace a public release's assets.
+A version without a tag means its run failed validation; fix the cause rather
+than tagging it.
 
 - After pushing, don't watch or check the Release workflow unless asked.
 - Signing and notarization inputs are documented at the top of `scripts/release.sh`.

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.4 - 2026-11-19
+
+### Changed
+
+- Tag each version on GitHub as soon as it passes validation, so it keeps its tag
+  even when its release can't be signed or published yet.
+
 ## 1.2.3 - 2026-11-18
 
 ### Changed
