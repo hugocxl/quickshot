@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.5 - 2026-11-20
+
+### Changed
+
+- Build the website with the latest design system, icons and illustrations, now published from
+  the hugocxl/stack monorepo.
+
 ## 1.2.4 - 2026-11-19
 
 ### Changed
