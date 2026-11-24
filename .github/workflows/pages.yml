@@ -1,45 +1,27 @@
-name: Deploy website
+name: Pages
+
 on:
   push:
     branches: [main]
     paths:
-      - website/**
-      - scripts/build-site.mjs
-      - scripts/check-site.mjs
-      - scripts/site-artwork.mjs
-      - package.json
-      - package-lock.json
-      - CHANGELOG.md
-      - media/icon.png
-      - .github/workflows/pages.yml
+      - 'website/**'
+      - 'CHANGELOG.md'
+      - 'media/icon.png'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: github-pages
+  cancel-in-progress: false
+
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    uses: hugocxl/stack/.github/workflows/reusable-pages.yml@main
     permissions:
+      contents: read
       pages: write
       id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm install --no-save @hugocxl/design-system@latest @hugocxl/icons@latest @hugocxl/vectors@latest
-      - run: node scripts/build-site.mjs
-      - run: node scripts/check-site.mjs
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-      - uses: actions/deploy-pages@v4
-        id: deployment

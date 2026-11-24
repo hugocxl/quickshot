@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.6 - 2026-11-24
+
+### Changed
+
+- Standardize repository setup, worktree isolation, and shared workflows.
+
 ## 1.2.5 - 2026-11-20
 
 ### Changed

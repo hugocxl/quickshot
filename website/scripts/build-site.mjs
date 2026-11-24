@@ -12,7 +12,7 @@ const escape = (text) =>
 
 // ─── Changelog: CHANGELOG.md is the version source ─────────────────────
 const releases = [];
-for (const line of read("CHANGELOG.md").split("\n")) {
+for (const line of read("../CHANGELOG.md").split("\n")) {
   const heading = line.match(/^## (\d+\.\d+\.\d+) - (\d{4}-\d{2}-\d{2})$/);
   if (heading) releases.push({ version: heading[1], date: heading[2], entries: [] });
   else if (line.startsWith("- ")) releases.at(-1).entries.push(line.slice(2));
@@ -38,8 +38,8 @@ const changelog = [
 
 // ─── Artwork the templates name, from the packages ──────────────────────
 const templates = [
-  ...readdirSync("website").filter((name) => name.endsWith(".html")).map((name) => `website/${name}`),
-  ...readdirSync("website/partials").map((name) => `website/partials/${name}`),
+  ...readdirSync(".").filter((name) => name.endsWith(".html")),
+  ...readdirSync("partials").map((name) => `partials/${name}`),
 ];
 const artwork = async (kind, markup) => {
   const names = new Set(templates.flatMap((path) => [...read(path).matchAll(new RegExp(`\\{\\{${kind} ([\\w-]+)\\}\\}`, "g"))].map((m) => m[1])));
@@ -49,7 +49,7 @@ const icons = await artwork("icon", icon);
 const vectors = await artwork("vector", vector);
 
 // ─── Templates ──────────────────────────────────────────────────────────
-const partial = (name) => read(`website/partials/${name}.html`).replace(/\n$/, "");
+const partial = (name) => read(`partials/${name}.html`).replace(/\n$/, "");
 function render(template, values) {
   const html = template
     .replace(/\{\{head ([^}]*)\}\}/, (_, args) => {
@@ -69,12 +69,12 @@ function render(template, values) {
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 cpSync(designSystem, `${out}/system`, { recursive: true, filter: (path) => !path.endsWith(".DS_Store") });
-cpSync("website/site.css", `${out}/site.css`);
-cpSync("media/icon.png", `${out}/icon.png`);
+cpSync("site.css", `${out}/site.css`);
+cpSync("../media/icon.png", `${out}/icon.png`);
 
 const values = { version: releases[0].version, changelog };
 for (const page of ["index.html", "docs.html", "changelog.html"]) {
-  writeFileSync(`${out}/${page}`, render(read(`website/${page}`), values));
+  writeFileSync(`${out}/${page}`, render(read(page), values));
 }
 writeFileSync(`${out}/.nojekyll`, "");
 console.log(`Built the Quickshot site for version ${releases[0].version} with ${releases.length} changelog entries.`);

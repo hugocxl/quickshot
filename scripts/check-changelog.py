@@ -4,7 +4,7 @@ import datetime
 from pathlib import Path
 import re
 
-text = Path(__file__).resolve().parent.parent.joinpath("CHANGELOG.md").read_text()
+text = Path(__file__).resolve().parent.parent.joinpath("CHANGELOG.md").read_text(encoding="utf-8")
 versions = []
 group = False
 entries = 0

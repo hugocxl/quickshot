@@ -185,7 +185,7 @@ for (const [name, recipe] of Object.entries(recipes)) {
 
 // Home: the version comes from the changelog, the action is the download.
 const home = docs.get("index.html");
-const [, latest] = readFileSync("CHANGELOG.md", "utf8").match(/^## (\d+\.\d+\.\d+) /m);
+const [, latest] = readFileSync("../CHANGELOG.md", "utf8").match(/^## (\d+\.\d+\.\d+) /m);
 assert.match(text(find(home, (el) => has(el, "ds-meta"))[0]), new RegExp(`Version ${latest.replaceAll(".", "\\.")}`));
 assert.equal(find(home, (el) => has(el, "ds-accent")).length, 1, "home: one accent phrase");
 assert.equal(find(home, (el) => has(el, "ds-button"))[0].attrs.href, "https://github.com/hugocxl/quickshot/releases");
@@ -193,7 +193,7 @@ const grid = find(home, (el) => has(el, "ds-grid"))[0];
 assert.equal(String(elements(grid).length), grid.attrs["data-columns"], "home: grid columns");
 
 // Changelog: one row per version in CHANGELOG.md.
-const versions = [...readFileSync("CHANGELOG.md", "utf8").matchAll(/^## (\d+\.\d+\.\d+) - (\d{4}-\d{2}-\d{2})$/gm)];
+const versions = [...readFileSync("../CHANGELOG.md", "utf8").matchAll(/^## (\d+\.\d+\.\d+) - (\d{4}-\d{2}-\d{2})$/gm)];
 const rows = elements(find(docs.get("changelog.html"), (el) => has(el, "ds-index"))[0]);
 assert.equal(rows.length, versions.length, "changelog: one row per version");
 rows.forEach((row, i) => {
@@ -202,7 +202,7 @@ rows.forEach((row, i) => {
 });
 
 // Site CSS stays inside the design system's tokens.
-const css = readFileSync("website/site.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+const css = readFileSync("site.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
 assert.doesNotMatch(css, /#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(|oklch\(/i, "site.css: literal color");
 assert.doesNotMatch(css, /box-shadow|text-shadow|gradient|font-family|font-weight|border-radius:\s*\d|\d+px/i, "site.css: off-token style");
 for (const [, property] of css.matchAll(/var\((--[\w-]+)/g)) assert.match(property, /^--ds-/, `site.css: ${property}`);
