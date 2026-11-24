@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.7 - 2026-11-24
+
+### Fixed
+
+- Grant write permissions to the release workflow so releases publish reliably.
+
 ## 1.2.6 - 2026-11-24
 
 ### Changed
